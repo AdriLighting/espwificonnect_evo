@@ -1,0 +1,101 @@
+#ifndef _DEF_H
+	#define _DEF_H
+
+	#include <Arduino.h>
+  #if defined(ESP8266)
+    extern "C" {
+      #include "user_interface.h"
+    }
+    #include <ESP8266WiFi.h>
+		#include <ESP8266mDNS.h>
+		#include <ESPAsyncTCP.h>
+  #elif defined(ESP32)
+		#include <ESPmDNS.h>
+		#include <AsyncTCP.h>
+    #include <WiFi.h>
+		#include <esp_wifi.h>
+		#include <Update.h>
+  #endif
+
+  #ifdef FSOK
+  	#ifdef FILESYSTEM 
+      #if defined USE_LITTLEFS
+        #if defined(ESP8266)
+          #include <LittleFS.h> 
+        #elif defined(ESP32)
+          #include <FS.h>
+          #include <LITTLEFS.h>
+        #endif
+      #elif defined USE_SPIFFS
+        #include <FS.h>
+      #endif
+    #endif	
+  #endif
+
+	#include <DNSServer.h>
+	#include <ArduinoOTA.h>
+	#include <ESPAsyncWebServer.h>
+
+	#include <altoolslib.h>
+	#include <LinkedList.h>
+
+	#ifdef ESP8266
+	    #define WIFI_getChipId() 	ESP.getChipId() 
+	    #define WM_WIFIOPEN   		ENC_TYPE_NONE
+	#elif defined(ESP32)
+	    #define WIFI_getChipId() 	(uint32_t)ESP.getEfuseMac()
+	    #define WM_WIFIOPEN   		WIFI_AUTH_OPEN
+	#endif
+
+	#ifndef WCEVO_CONNECTED
+		#define WCEVO_CONNECTED (WiFi.status() == WL_CONNECTED)
+  #endif
+  // #ifdef ESP8266
+  //   #define JSON_BUFFER_SIZE 12000
+  // #else
+  //   #define JSON_BUFFER_SIZE 20480
+  // #endif
+
+	#ifndef WCEVO_DEFINE_DEFAULT
+	  #ifndef WCEVO_APPSK
+	    #define WCEVO_APPSK "adsap1234"
+	  #endif
+	  #ifndef WCEVO_OTAPSK
+	    #define WCEVO_OTAPSK "adsota1234"
+	  #endif
+	  #ifndef WCEVO_SSID
+	    #define WCEVO_SSID "routeur-ssid"
+	  #endif
+	  #ifndef WCEVO_SSIDPSK
+	    #define WCEVO_SSIDPSK "routeur-pswd"
+	  #endif
+	  #ifndef WCEVO_HOSTNAME
+	    #define WCEVO_HOSTNAME "esp_wificonnect"
+	  #endif
+  #endif
+
+	// #include <esp_idf_version.h>
+	#ifdef ESP_IDF_VERSION
+	    // #pragma message "ESP_IDF_VERSION_MAJOR = " STRING(ESP_IDF_VERSION_MAJOR)
+	    // #pragma message "ESP_IDF_VERSION_MINOR = " STRING(ESP_IDF_VERSION_MINOR)
+	    // #pragma message "ESP_IDF_VERSION_PATCH = " STRING(ESP_IDF_VERSION_PATCH)
+	    #define VER_IDF_STR STRING(ESP_IDF_VERSION_MAJOR)  "."  STRING(ESP_IDF_VERSION_MINOR)  "."  STRING(ESP_IDF_VERSION_PATCH)
+	#endif
+
+	// #include "esp_arduino_version.h"
+	#ifdef ESP_ARDUINO_VERSION
+	    // #pragma message "ESP_ARDUINO_VERSION_MAJOR = " STRING(ESP_ARDUINO_VERSION_MAJOR)
+	    // #pragma message "ESP_ARDUINO_VERSION_MINOR = " STRING(ESP_ARDUINO_VERSION_MINOR)
+	    // #pragma message "ESP_ARDUINO_VERSION_PATCH = " STRING(ESP_ARDUINO_VERSION_PATCH)
+	    #define VER_ARDUINO_STR STRING(ESP_ARDUINO_VERSION_MAJOR)  "."  STRING(ESP_ARDUINO_VERSION_MINOR)  "."  STRING(ESP_ARDUINO_VERSION_PATCH)
+	#else
+	    // #include <core_version.h>
+	    // #pragma message "ESP_ARDUINO_VERSION_GIT  = " STRING(ARDUINO_ESP32_GIT_VER)//  0x46d5afb1
+	    // #pragma message "ESP_ARDUINO_VERSION_DESC = " STRING(ARDUINO_ESP32_GIT_DESC) //  1.0.6
+	    #define VER_ARDUINO_STR "Unknown"
+	    // #pragma message "ESP_ARDUINO_VERSION_REL  = " STRING(ARDUINO_ESP32_RELEASE) //"1_0_6"
+	#endif
+
+	#define G(string_literal)  (String(FPSTR(string_literal)).c_str())
+
+#endif // DEF_H
