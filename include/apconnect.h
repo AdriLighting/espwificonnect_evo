@@ -21,10 +21,12 @@
 
   #include "def.h"
   #include "credential.h"
-
+  
+  #define SERVERREQUEST AsyncWebServerRequest
 
   class WCEVO_APconnect 
   {
+    typedef std::function<void()> callback_function_t;
       
     WCEVO_credential  * _credential   = nullptr;
     WCEVO_server      * _server       = nullptr;
@@ -39,6 +41,7 @@
     void setup_webserver(boolean);
     void shutdown();
 
+    #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
     // region ################################################ WiFiManager_h
       // https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp#L3345-L3362
       String htmlEntities(String str, bool whitespace = false);
@@ -48,28 +51,32 @@
     // endregion >>>> 
 
     // region ################################################ ESPAsyncWiFiManager_h
-      // https://github.com/alanswx/ESPAsyncWiFiManager/blob/master/src/ESPAsyncWiFiManager.cpp#L1256-L1269
-      boolean captivePortal(AsyncWebServerRequest *request);
+
 
       //https://github.com/alanswx/ESPAsyncWiFiManager/blob/master/src/ESPAsyncWiFiManager.cpp#L884-L918
-      void handleRoot(AsyncWebServerRequest *request); 
+      template<class X>
+      void handleRoot(X *request); 
 
       // https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp#L1879-L1987   
-      void handleInfo(AsyncWebServerRequest *request);   
+      void handleInfo_v2(AsyncWebServerRequest *request);   
+      void handleInfo_v1(AsyncWebServerRequest *request);   
       String infoAsString();
 
       //https://github.com/alanswx/ESPAsyncWiFiManager/blob/master/src/ESPAsyncWiFiManager.cpp#L1202-L1225
       void handleReset(AsyncWebServerRequest *request);   
     // endregion >>>>  
 
-    void handleScanReset(AsyncWebServerRequest *request);   
-    void handleWifi(AsyncWebServerRequest *request, boolean scan);    
-    void handleWifiMod(AsyncWebServerRequest *request);    
-    void handleWifiSave(AsyncWebServerRequest *request);   
-    void handleWifiSaveMod(AsyncWebServerRequest *request);   
-    void handleWifiCo(AsyncWebServerRequest *request);   
-    void handleExit(AsyncWebServerRequest *request);   
+      void handleScanReset(AsyncWebServerRequest *request);   
+      void handleWifi(AsyncWebServerRequest *request, boolean scan);    
+      void handleWifiMod(AsyncWebServerRequest *request);    
+      void handleWifiSave(AsyncWebServerRequest *request);   
+      void handleWifiSaveMod(AsyncWebServerRequest *request);   
+      void handleWifiCo(AsyncWebServerRequest *request);   
+      void handleExit(AsyncWebServerRequest *request);   
+    #endif
 
+      // https://github.com/alanswx/ESPAsyncWiFiManager/blob/master/src/ESPAsyncWiFiManager.cpp#L1256-L1269
+      boolean captivePortal(AsyncWebServerRequest *request);      
   public:
 
     WCEVO_APconnect() {};

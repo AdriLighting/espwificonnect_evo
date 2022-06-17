@@ -44,33 +44,44 @@ boolean WCEVO_STAconnect::setup() {
   // a modifier avec un retour d'érreur + configuration du mod pesistant
   //  
   if (!WCEVO_managerPtrGet()->credential()) {
-    ALT_TRACEC("main", "[FATAL] no credential found\n");
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "[FATAL] no credential found\n");
     return false;
   }
+
   //
 
   // stack
   yield();
 
   // debug
-  ALT_TRACEC("main", "Start of connection to the WiFi Router\n\t credListPos: %d - ", WCEVO_managerPtrGet()->_credentialPos);
-  if (WCEVO_managerPtrGet()->credential()) WCEVO_managerPtrGet()->credential()->print();
-  const char * ssid = "persistent";
-  const char * pass = "persistent";
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Start of connection to the WiFi Router\n\t credListPos: %d - ", WCEVO_managerPtrGet()->_credentialPos);
+  WCEVO_managerPtrGet()->credential()->print();
+  const char * ssid = "";
+  const char * pass = "";
   // const char * hostName = "wcevo";
-  if (WCEVO_managerPtrGet()->credential()) {
-    WCEVO_managerPtrGet()->credential()->get_ssid(ssid);
-    WCEVO_managerPtrGet()->credential()->get_psk(pass);    
+  WCEVO_managerPtrGet()->credential()->get_ssid(ssid);
+  WCEVO_managerPtrGet()->credential()->get_psk(pass); 
+  if ((strcmp(ssid, "") == 0) && (strcmp(pass, "") == 0)) {
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "[FATAL] credential found but ssid and psk is blank\n");
+    return false;
   }
-  ALT_TRACEC("main", "Attemp to connect to [ssid: %s] [psk: %s]\n", ssid, pass);
+  uint8_t listSize = 0;
+  int8_t listPos = 0;
+  WCEVO_managerPtrGet()->networkScan()->get_SSID(al_tools::ch_toString(ssid), listSize, listPos);   
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "networkScan search result\n\t[ssid: %s] [listSize: %d] [listPos: %d]\n", ssid, listSize, listPos);
+  if (listSize > 0 && listPos < 0) {
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "[FATAL] no ssid find in scan network list\n");
+    return false;
+  }
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Attemp to connect to [ssid: %s] [psk: %s]\n", ssid, pass);
   //
 
   // reset timer
   _lastReconnectAttempt = millis();
 
   // if (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STA && WCEVO_managerPtrGet()->get_AP()->get_active()) {
-  //   ALT_TRACEC("main", "Access point disabled.\n");
-  //   ALT_TRACEC("main", "&c:1&s:\tSet _AP.active to FALSE\n");
+  //   ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Access point disabled.\n");
+  //   ALT_TRACEC(WCEVO_DEBUGREGION_STA, "&c:1&s:\tSet _AP.active to FALSE\n");
   //   WiFi.softAPdisconnect(true);
   //   WCEVO_managerPtrGet()->get_AP()->set_active(false);
   // }
@@ -78,31 +89,32 @@ boolean WCEVO_STAconnect::setup() {
   // attempt to connect using saved settings, on fail fallback to AP config portal
   if(!WiFi.enableSTA(true)){
     // handle failure mode Brownout detector etc.
-    ALT_TRACEC("main","[FATAL] Unable to enable wifi!\n");
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA,"[FATAL] Unable to enable wifi!\n");
     return false;
-  } else {ALT_TRACEC("main", "Set enableSTA(true) succes\n");}
+  } else {ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set enableSTA(true) succes\n");}
   
-  ALT_TRACEC("main", "Set autoReconnect to TRUE\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set autoReconnect to TRUE\n");
   WiFi.setAutoReconnect(true);
 
-  #ifdef ESP8266
+  // #ifdef ESP8266
     const char * hostName = "wcevo";
     _server->get_hostName(hostName);  
-    ALT_TRACEC("main", "Set hostname: %s\n", hostName);  
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set hostname: %s\n", hostName);  
     WiFi.hostname(hostName);
-  #endif   
+  // #endif   
 
   // WiFi.disconnect(true);
   WCEVO_managerPtrGet()->get_WM()->WiFi_Disconnect();
 
-  if      (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STAAP)  WiFi.mode(WIFI_AP_STA);
-  else if (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STA)    WiFi.mode(WIFI_STA);
-  else WiFi.mode(WIFI_STA);
+  // if      (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STAAP)  WiFi.mode(WIFI_AP_STA);
+  // else if (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STA)    WiFi.mode(WIFI_STA);
+  // else WiFi.mode(WIFI_STA);
 
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
 
   if (!_active) {
-    ALT_TRACEC("main", "Set _active to TRUE\n");
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set _active to TRUE\n");
     _active = true;
   }
   
@@ -120,7 +132,7 @@ boolean WCEVO_STAconnect::setup() {
     WiFi.begin(ssid, pass);
   } else {
     if (WiFi.SSID().length() > 0) {
-      ALT_TRACEC("main", "Using last saved values, should be faster\n");
+      ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Using last saved values, should be faster\n");
       #if defined(ESP8266)
         ETS_UART_INTR_DISABLE();
         wifi_station_disconnect();
@@ -130,7 +142,7 @@ boolean WCEVO_STAconnect::setup() {
       #endif
       WiFi.begin();
     } else {
-      ALT_TRACEC("main", "Try to connect with saved credentials\n");
+      ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Try to connect with saved credentials\n");
       WiFi.begin();
     }
   }*/
@@ -150,34 +162,34 @@ boolean WCEVO_STAconnect::setup() {
 /*
 bool WCEVO_STAconnect::setSTAConfig(){
   #ifdef WM_DEBUG_LEVEL
-  ALT_TRACEC("main", "STA static IP:",_sta_static_ip);  
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "STA static IP:",_sta_static_ip);  
   #endif
   bool ret = true;
   if (_sta_static_ip) {
       #ifdef WM_DEBUG_LEVEL
-      ALT_TRACEC("main", "Custom static IP/GW/Subnet/DNS");
+      ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Custom static IP/GW/Subnet/DNS");
       #endif
     if(_sta_static_dns) {
       #ifdef WM_DEBUG_LEVEL
-      ALT_TRACEC("main", "Custom static DNS");
+      ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Custom static DNS");
       #endif
       ret = WiFi.config(_sta_static_ip, _sta_static_gw, _sta_static_sn, _sta_static_dns);
     }
     else {
       #ifdef WM_DEBUG_LEVEL
-      ALT_TRACEC("main", "Custom STA IP/GW/Subnet");
+      ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Custom STA IP/GW/Subnet");
       #endif
       ret = WiFi.config(_sta_static_ip, _sta_static_gw, _sta_static_sn);
     }
 
       #ifdef WM_DEBUG_LEVEL
-      if(!ret) ALT_TRACEC("main", "[ERROR] wifi config failed");
-      else ALT_TRACEC("main", "STA IP set:",WiFi.localIP());
+      if(!ret) ALT_TRACEC(WCEVO_DEBUGREGION_STA, "[ERROR] wifi config failed");
+      else ALT_TRACEC(WCEVO_DEBUGREGION_STA, "STA IP set:",WiFi.localIP());
       #endif
   } 
   else {
       #ifdef WM_DEBUG_LEVEL
-      ALT_TRACEC("main", "setSTAConfig static ip not set, skipping");
+      ALT_TRACEC(WCEVO_DEBUGREGION_STA, "setSTAConfig static ip not set, skipping");
       #endif
   }
   return ret;

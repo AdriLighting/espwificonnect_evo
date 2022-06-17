@@ -95,14 +95,14 @@ bool WiFiManagerCPY::WiFi_Disconnect() {
     #ifdef ESP8266
       if((WiFi.getMode() & WIFI_STA) != 0) {
           bool ret;
-          ALT_TRACEC("main", "WiFi station disconnect\n"); // DEBUG_DEV
+          ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "WiFi station disconnect\n"); // DEBUG_DEV
           ETS_UART_INTR_DISABLE(); // @todo probably not needed
           ret = wifi_station_disconnect();
           ETS_UART_INTR_ENABLE();        
           return ret;
       }
     #elif defined(ESP32)
-      ALT_TRACEC("main", "WiFi station disconnect\n"); // DEBUG_DEV
+      ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "WiFi station disconnect\n"); // DEBUG_DEV
       return WiFi.disconnect(); // not persistent atm
     #endif
     return false;
@@ -273,7 +273,7 @@ String WiFiManagerCPY::getModeString(uint8_t mode){
 // one for connecting to flash , one for new client
 // clean up, flow is convoluted, and causes bugs
 void WiFiManagerCPY::connectWifi(String ssid, String pass, bool connect) {
-  ALT_TRACEC("main", "Connecting as wifi client...\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Connecting as wifi client...\n");
   if(_cleanConnect) WiFi_Disconnect(); // disconnect before begin, in case anything is hung, this causes a 2 seconds delay for connect
   if (ssid != "") {
     wifiConnectNew(ssid,pass,connect);
@@ -283,7 +283,7 @@ void WiFiManagerCPY::connectWifi(String ssid, String pass, bool connect) {
       wifiConnectDefault();
     }
     else {
-      ALT_TRACEC("main", "No wifi saved, skipping\n");
+      ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "No wifi saved, skipping\n");
     }
   }
 }
@@ -299,13 +299,13 @@ void WiFiManagerCPY::connectWifi(String ssid, String pass, bool connect) {
 bool WiFiManagerCPY::wifiConnectNew(String ssid, String pass,bool connect){
   bool ret = false;
   // DEBUG_WM(DEBUG_DEV,F("CONNECTED: "),WiFi.status() == WL_CONNECTED ? "Y" : "NO");
-  ALT_TRACEC("main", "Connecting to NEW AP: %s\n",ssid.c_str());
-  ALT_TRACEC("main", "Using Password: %s\n",pass.c_str()); // DEBUG_DEV
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Connecting to NEW AP: %s\n",ssid.c_str());
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Using Password: %s\n",pass.c_str()); // DEBUG_DEV
   WiFi_enableSTA(true,storeSTAmode); // storeSTAmode will also toggle STA on in default opmode (persistent) if true (default)
   WiFi.persistent(true);
   ret = WiFi.begin(ssid.c_str(), pass.c_str(), 0, NULL, connect);
   WiFi.persistent(false);
-  if(!ret) ALT_TRACEC("main", "[ERROR] wifi begin failed\n"); // DEBUG_ERROR
+  if(!ret) ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "[ERROR] wifi begin failed\n"); // DEBUG_ERROR
   return ret;
 }
 
@@ -317,18 +317,18 @@ bool WiFiManagerCPY::wifiConnectNew(String ssid, String pass,bool connect){
 bool WiFiManagerCPY::wifiConnectDefault(){
   bool ret = false;
 
-  ALT_TRACEC("main", "Connecting to SAVED AP: %s\n", WiFi_SSID(true).c_str());
-  ALT_TRACEC("main", "Using Password: %s\n", WiFi_psk(true).c_str()); // DEBUG_DEV
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Connecting to SAVED AP: %s\n", WiFi_SSID(true).c_str());
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Using Password: %s\n", WiFi_psk(true).c_str()); // DEBUG_DEV
 
   ret = WiFi_enableSTA(true,storeSTAmode);
   delay(500); // THIS DELAY ?
 
-  ALT_TRACEC("main", "Mode after delay: %s\n", getModeString(WiFi.getMode()).c_str()); // DEBUG_DEV
-  ALT_TRACEC("main", "[ERROR] wifi enableSta failed\n"); // DEBUG_ERROR
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Mode after delay: %s\n", getModeString(WiFi.getMode()).c_str()); // DEBUG_DEV
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "[ERROR] wifi enableSta failed\n"); // DEBUG_ERROR
 
   ret = WiFi.begin();
 
-  if(!ret) ALT_TRACEC("main", "[ERROR] wifi begin failed\n"); // DEBUG_ERROR
+  if(!ret) ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "[ERROR] wifi begin failed\n"); // DEBUG_ERROR
 
 
   return ret;

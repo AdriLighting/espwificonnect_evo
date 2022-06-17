@@ -47,6 +47,7 @@
 
   const char* const WIFI_MODES[] PROGMEM = { "NULL", "STA", "AP", "STA+AP" };
 
+  #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
 
   const char WCEVO_HTTP_HEAD[] PROGMEM = R"rawliteral(
   <!DOCTYPE html>
@@ -81,23 +82,26 @@
   "<form action=\"/w\"  method=\"get\"><button>Credential</button></form><br/>"
   "<form action=\"/\"   method=\"get\"><button>Credential multiple</button></form><br/>"
   "<form action=\"/m\"  method=\"get\"><button>Server setup</button></form><br/>"
+  "<form action=\"/ia\" method=\"get\"><button>Info ip</button></form><br/>"
   "<form action=\"/i\"  method=\"get\"><button>Info</button></form><br/>"
   "<form action=\"/r\"  method=\"post\"><button>Reset</button></form><br/>"
   };
 
   const char R_root               [] PROGMEM = "/";
   const char R_wifi               [] PROGMEM = "/w";
+  const char R_wifiScan           [] PROGMEM = "/wsc";
   const char R_wifisave           [] PROGMEM = "/ws";
   const char R_wifico             [] PROGMEM = "/wc";
   const char R_wifimod            [] PROGMEM = "/m";
   const char R_wifisavmod         [] PROGMEM = "/ms";
   const char R_info               [] PROGMEM = "/i";
+  const char R_infoAndroid        [] PROGMEM = "/ia";
   const char R_restart            [] PROGMEM = "/r";
 
   const char HTTP_FORM_START      [] PROGMEM = "<form method='get' action='ws'><input id='s' name='s' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><br/>";
   const char HTTP_FORM_PARAM      [] PROGMEM = "<br/><input id='{i}' name='{n}' length={l} placeholder='{p}' value='{v}' {c}>";
   const char HTTP_FORM_END        [] PROGMEM = "<br/><button type='submit'>save</button></form>";
-  const char HTTP_SCAN_LINK       [] PROGMEM = "<br/><div class=\"c\"><a href=\"/w\">Scan</a></div>";
+  const char HTTP_SCAN_LINK       [] PROGMEM = "<br/><div class=\"c\"><a href=\"/wsc\">Scan</a></div>";
   // const char HTTP_SCANR_LINK    [] PROGMEM = "<div class=\"c\"><a href=\"/scanr\">Reset scan</a></div>";
   const char HTTP_HOME_LINK       [] PROGMEM = "<div class=\"c\"><a href=\"/\">Home</a></div>";
   const char HTTP_SAVED           [] PROGMEM = "<div>Credentials Saved<br />Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";
@@ -149,6 +153,11 @@
   const char HTTP_INFO_stamac     [] PROGMEM = "<dt>Station MAC</dt><dd>{1}</dd>";
   const char HTTP_INFO_conx       [] PROGMEM = "<dt>Connected</dt><dd>{1}</dd>";
   const char HTTP_INFO_autoconx   [] PROGMEM = "<dt>Autoconnect</dt><dd>{1}</dd>";
+  const char HTTP_INFO_ap         [] PROGMEM = "Point d'accès";
+  const char HTTP_INFO_sta        [] PROGMEM = "Station";
+  const char HTTP_INFO_con_1      [] PROGMEM = "<dt>La connexion est définie comme:</dt><dd style=\"padding:0 0 0 5px;\">{1}</dd>";
+  const char HTTP_INFO_con_3      [] PROGMEM = "<dt>Vous etes connecter au router:</dt><dd style=\"padding:0 0 0 5px;\">{1}</dd>";
+  const char HTTP_INFO_con_2      [] PROGMEM = "<dt>Pour vous connecter à l'appareil, Connecter vous au routeur indiquer ci dessus, pui saisir l'adresse IP ci-dessous dans les réglages IP de l'application android:</dt><dd style=\"padding:0 0 0 5px;\">{1}</dd>";
 
   const char HTTP_INFO_aboutver   [] PROGMEM = "<dt>WiFiManager</dt><dd>{1}</dd>";
   const char HTTP_INFO_aboutarduino[] PROGMEM = "<dt>Arduino</dt><dd>{1}</dd>";
@@ -170,6 +179,9 @@
   const char HTTP_HEAD_CT2[]        PROGMEM = "text/plain";
   const char HTTP_HEAD_CORS[]       PROGMEM = "Access-Control-Allow-Origin";
   const char HTTP_HEAD_CORS_ALLOW_ALL[]  PROGMEM = "*";  
+
+  #endif
+
   // endregion >>>> WIFIMANAGER - 
 
 

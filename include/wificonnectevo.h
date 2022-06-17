@@ -41,6 +41,10 @@
 	#include "apconnect.h"
 	#include "wcevo_wifimanager.h"
 
+  static const char WCEVO_DEBUGREGION_WCEVO	[] PROGMEM = "wcevo";
+  static const char WCEVO_DEBUGREGION_AP		[] PROGMEM = "wcevo ap";
+  static const char WCEVO_DEBUGREGION_STA		[] PROGMEM = "wcevo STA";
+
 	const char * const WIFI_STA_STATUS[] PROGMEM
 	{
 	  "WL_IDLE_STATUS",     // 0 STATION_IDLE
@@ -56,7 +60,28 @@
 
 	const char WCEVO_PTJSON_001[] PROGMEM = "credentials";
 	const char WCEVO_PTJSON_002[] PROGMEM = "credential";
-
+	const char WCEVO_PTJSON_003[] PROGMEM = "server";
+	const char WCEVO_PTJSON_004[] PROGMEM = "hostname";
+	const char WCEVO_PTJSON_005[] PROGMEM = "apssid";
+	const char WCEVO_PTJSON_006[] PROGMEM = "appsk";
+	const char WCEVO_PTJSON_007[] PROGMEM = "connection";
+	const char WCEVO_PTJSON_008[] PROGMEM = "cm";
+	const char WCEVO_PTJSON_009[] PROGMEM = "cmf";
+	const char WCEVO_PTJSON_010[] PROGMEM = "cu";
+	const char WCEVO_PTJSON_011[] PROGMEM = "scan";
+	static const char* const WCEVO_PTJSON_ALL[] PROGMEM = {
+	  WCEVO_PTJSON_001, 
+	  WCEVO_PTJSON_002, 
+	  WCEVO_PTJSON_003, 
+	  WCEVO_PTJSON_004,
+	  WCEVO_PTJSON_005,
+	  WCEVO_PTJSON_006,
+	  WCEVO_PTJSON_007,
+	  WCEVO_PTJSON_008,
+	  WCEVO_PTJSON_009,
+	  WCEVO_PTJSON_010,
+	  WCEVO_PTJSON_011
+	};
 
 	/**
 	 * mod de connection a l'initialisation du programm 
@@ -91,11 +116,16 @@
 
 	class WCEVO_manager
 	{
+		typedef std::function<void()> callback_function_t;
+
+
 		const char * config_filepath = "/wcevo_config.json";
 
     AsyncWebServer  * _webserver ;
     DNSServer       * _dnsServer ;
-    
+    // AsyncUDP 				*	_udpMultiServer;
+    // AsyncUDP 				*	_udpServer;
+
 		WCEVO_server								* _server 			= nullptr;
 		LList<WCEVO_credential *>  	_credentials;
 		WCEVO_credential 						* _credential 	= nullptr;
@@ -117,7 +147,20 @@
 		boolean _scanNetwork_running = true;
 		boolean _scanNetwork_requiered = false;
 
+		callback_function_t _cb_serverEvent = nullptr;;
+		callback_function_t _cb_webserverEvent = nullptr;;
+		callback_function_t _cb_webserverOn = nullptr;;
+		callback_function_t _cb_webserveAprOn = nullptr;;
+		callback_function_t _cb_webserveAprEvent = nullptr;;
+		// IPAddress _udp_ip 		= {239, 0, 0, 57};
+		// IPAddress _udpMulti_ip 		= {239, 0, 0, 57};
+		// uint16_t 	_udpMulti_port 	= 9200;
+		// uint16_t 	_udp_port 	= 9200;
 
+    unsigned long _configPortalTimeout    = 0;
+    uint8_t _configPortalMod = 0;
+    unsigned long _configPortalStart      = 0;
+		boolean configPortalHasTimeout();
 
 	public:
 		uint8_t _credentialPos 	= 0;
@@ -125,6 +168,7 @@
 		// WCEVO_manager(WCEVO_server * cr, DNSServer*dnsServer,AsyncWebServer*webserver);
 		WCEVO_manager(const char * const & v1 = NULL, const char * const & v2 = NULL, const char * const & v3 = NULL, DNSServer* v4 = nullptr,AsyncWebServer* v5 = nullptr);
 		WCEVO_manager(const char * const & v1 = NULL, const char * const & v2 = NULL, DNSServer* v4 = nullptr,AsyncWebServer* v5 = nullptr);
+		// WCEVO_manager(const char * const & v1 = NULL, DNSServer* v4 = nullptr,AsyncWebServer* v5 = nullptr);
 		WCEVO_manager(const char * const & v1 = NULL, DNSServer* v4 = nullptr,AsyncWebServer* v5 = nullptr);
 		WCEVO_manager(DNSServer* v4 = nullptr,AsyncWebServer* v5 = nullptr);
 		~WCEVO_manager();
@@ -138,6 +182,8 @@
 		WCEVO_APconnect							* get_AP();
 		WiFiManagerCPY 							* get_WM();
 
+		callback_function_t get_cb_webserveAprOn() {return _cb_webserveAprOn;}
+		callback_function_t get_cb_webserveAprEvent() {return _cb_webserveAprEvent;}
 	private:
 
 		void credentials_delete();
@@ -161,7 +207,19 @@
 		void 			sta_reconnect();
 		void 			sta_reconnect_end(boolean apSetup = true);
 		uint8_t 	sta_getMaxAettemp();
+
+		boolean _cb_serverEvent_loaded = false;
 	public:
+		void set_cb_serverEvent(callback_function_t f) { _cb_serverEvent = std::move(f); };
+
+		void set_cb_webserverOn(callback_function_t f) { _cb_webserverOn = std::move(f); };
+		void set_cb_webserverEvent(callback_function_t f) { _cb_webserverEvent = std::move(f); };
+
+		void set_cb_webserveAprOn(callback_function_t f) { _cb_webserveAprOn = std::move(f); };
+		void set_cb_webserveAprEvent(callback_function_t f) { _cb_webserveAprEvent = std::move(f); };
+
+		void setConfigPortalTimeout(unsigned long seconds);
+
 		void set_credentialUse(boolean);
 		boolean get_credentialUse();
 
@@ -190,6 +248,10 @@
 
 		void start();
 		void print();
+		void keyboard_getter(const String &);
+		void keyboard_print();
+		void api_getter(DynamicJsonDocument & doc, const char *);
+		void api_key(DynamicJsonDocument & doc, const String & arg);
 
 		#ifdef FILESYSTEM
 			void credentials_to_fs(

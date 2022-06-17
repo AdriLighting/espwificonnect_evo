@@ -55,7 +55,18 @@ WCEVO_wifiscanItem::WCEVO_wifiscanItem(uint8_t index){
 	if (!_mac) _mac = new uint8_t[6]; 
   for ( int j = 0 ; j < 6 ; j++ ) { 
     _mac[j] = mac[j];
-  }			
+  }		
+
+	String mac_1 = "";
+  int splitSize;
+  const char** list = al_tools::explode(_bssidstr, ':', splitSize);
+  for(int i = 1; i < splitSize; ++i) {mac_1+=list[i];}
+  // Serial.printf("mac_1: %s\n", mac_1.c_str());
+  for(int i = 0; i < splitSize; ++i) {
+    delete list[i];
+  }
+  delete[] list;
+
 }			 
 WCEVO_wifiscanItem::WCEVO_wifiscanItem(WCEVO_wifiscanItem * item){
   this->_ssid								= item->_ssid;
@@ -78,8 +89,10 @@ void WCEVO_wifiscanItem::update(WCEVO_wifiscanItem * item){
 };	
 		
 
-void WCEVO_wifiscanItem::get_ssid(String &result)		{result = _ssid;}
-void WCEVO_wifiscanItem::get_rssi(int32_t &result)	{result = _rssi;}
+void WCEVO_wifiscanItem::get_chanel(int32_t &result)	{result = _channel;}
+void WCEVO_wifiscanItem::get_bssid(String &result)		{result = _bssidstr;}
+void WCEVO_wifiscanItem::get_ssid(String &result)			{result = _ssid;}
+void WCEVO_wifiscanItem::get_rssi(int32_t &result)		{result = _rssi;}
 void WCEVO_wifiscanItem::get_encryptionType(uint8_t &result)	{result = _encryptionType;}
 uint8_t * WCEVO_wifiscanItem::get_mac(WCEVO_wifiscanItem*ptr) {
   uint8_t * mac = new uint8_t[6]; 
@@ -109,7 +122,46 @@ unsigned int WCEVO_scanNetwork::getRSSIasQuality(int RSSI) {
   else  									{quality = 2 * (RSSI + 100);}
   return quality;
 }
+void WCEVO_scanNetwork::networkListAsJson(uint8_t nb, JsonArray & doc) {
+
+	scan(nb);
+	list_sortByBestRSSI();
+  for (int i = 0; i < _wifiScan.size() ; i++) {
+  	
+  	JsonArray 	arr = doc.createNestedArray();
+  	JsonObject 	obj = arr.createNestedObject();
+
+    WCEVO_wifiscanItem * sID = _wifiScan.get(i);
+    int rssi = 0;
+    uint8_t encryptionType = 0;
+    int32_t chanel = 0;
+    String ssid = "";
+    String bssid = "";
+    sID->get_rssi(rssi);
+    sID->get_ssid(ssid);
+    sID->get_encryptionType(encryptionType);
+    sID->get_chanel(chanel);
+    sID->get_bssid(bssid);
+
+    unsigned int quality = getRSSIasQuality(rssi);
+    quality = map(quality, 0, 100, 0, 4);
+		Serial.printf_P(PSTR("[%-3d] %-20s rssi: %-3d q1: %-3d\n"), i, ssid.c_str(), rssi, quality);
+
+		obj[F("ssid")] = ssid;
+		obj[F("rssi")] = getRSSIasQuality(rssi);
+		obj[F("encryptionType")] = wcevo_scan::encryptionTypeStr(encryptionType);
+		obj[F("chanel")] = chanel;
+		obj[F("bssid")] = bssid;
+
+  }
+
+  if (!WCEVO_managerPtrGet()->get_scanNetwork_requiered()) {
+  	list_clear();
+  	WCEVO_managerPtrGet()->set_scanNetwork_requiered(true);
+  }  
+}
 String WCEVO_scanNetwork::networkListAsString(boolean statu) {
+
   String pager = "";
   for (int i = 0; i < _wifiScan.size() ; i++)
   {
@@ -129,28 +181,31 @@ String WCEVO_scanNetwork::networkListAsString(boolean statu) {
     quality = map(quality, 0, 100, 0, 4);
 		Serial.printf_P(PSTR("[%-3d] %-20s rssi: %-3d q1: %-3d\n"), i, ssid.c_str(), rssi, quality);
 
-    String item = FPSTR(HTTP_ITEM);
-    item.replace("{v}", ssid);
-    item.replace("{r}", String(quality));
-		#if defined(ESP8266)
-		if (encryptionType != ENC_TYPE_NONE) {
-		#else
-		if (encryptionType != WIFI_AUTH_OPEN) {
-		#endif
-			item.replace("{l}", "l");
-		} else {
-			item.replace("{l}", "");
-		}
-    pager += item;
+		#if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
+	    String item = FPSTR(HTTP_ITEM);
+	    item.replace("{v}", ssid);
+	    item.replace("{r}", String(quality));
+			#if defined(ESP8266)
+			if (encryptionType != ENC_TYPE_NONE) {
+			#else
+			if (encryptionType != WIFI_AUTH_OPEN) {
+			#endif
+				item.replace("{l}", "l");
+			} else {
+				item.replace("{l}", "");
+			}
+	    pager += item;
+    #endif
   }
-  if (!WCEVO_managerPtrGet()->get_scanNetwork_requiered()) {
-  	list_clear();
+
+  list_clear();
+  
+  if (!WCEVO_managerPtrGet()->get_scanNetwork_requiered() && statu) {
   	WCEVO_managerPtrGet()->set_scanNetwork_requiered(true);
   }
 
   return pager;
 }
-
 
 void WCEVO_scanNetwork::list_clear(){
 	if (_wifiScan.size() <= 0) return;
@@ -212,7 +267,7 @@ int WCEVO_scanNetwork::get_bestSSID() {
  			Serial.printf_P(PSTR("[%-3d] %-20s | [%-3d] %-20s : %s\n"), i, ssid.c_str(), j, list->get(j)->get_ssid().c_str(), cred_psk);
  			if ( !list->get(j)->get_tested() && (list->get(j)->get_ssid() == ssid)) {
  				(list)->get(j)->set_tested(true);
- 				Serial.printf("\tRETURN %d - %s : %s\n", j, list->get(j)->get_ssid().c_str(), cred_psk);
+ 				Serial.printf_P(PSTR("\tRETURN %d - %s : %s\n"), j, list->get(j)->get_ssid().c_str(), cred_psk);
  				return j;
  			}
  		}
@@ -232,6 +287,19 @@ WCEVO_wifiscanItem * WCEVO_scanNetwork::get_bestSSID(String * search, uint8_t si
   }	
   return nullptr;
 } 
+
+void WCEVO_scanNetwork::get_SSID(String search, uint8_t & listSize, int8_t & pos) {
+	listSize = _wifiScan.size();
+	int8_t result = -1;
+  for ( int i = 0 ; i < _wifiScan.size() ; i++ ) {
+ 		WCEVO_wifiscanItem * item = _wifiScan.get(i); 
+ 		String ssid = "";
+ 		item->get_ssid(ssid);
+ 		if (ssid == search) { result = i; break;}
+  }	
+  pos = result;
+} 
+
 WCEVO_wifiscanItem * WCEVO_scanNetwork::cmp_ssid(const char * const & search) {
   for ( int i = 0 ; i < _wifiScan.size() ; i++ ) {
  		WCEVO_wifiscanItem * item = _wifiScan.get(i); 

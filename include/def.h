@@ -17,7 +17,7 @@
 		#include <Update.h>
   #endif
 
-  #ifdef FSOK
+  // #ifdef FSOK
   	#ifdef FILESYSTEM 
       #if defined USE_LITTLEFS
         #if defined(ESP8266)
@@ -30,12 +30,12 @@
         #include <FS.h>
       #endif
     #endif	
-  #endif
+  // #endif
 
 	#include <DNSServer.h>
 	#include <ArduinoOTA.h>
 	#include <ESPAsyncWebServer.h>
-
+ 	// #include <ESPAsyncUDP.h>  
 	#include <altoolslib.h>
 	#include <LinkedList.h>
 
@@ -48,7 +48,7 @@
 	#endif
 
 	#ifndef WCEVO_CONNECTED
-		#define WCEVO_CONNECTED (WiFi.status() == WL_CONNECTED)
+		#define WCEVO_CONNECTED (WiFi.localIP()[0] != 0 && WiFi.status() == WL_CONNECTED)
   #endif
   // #ifdef ESP8266
   //   #define JSON_BUFFER_SIZE 12000
@@ -74,13 +74,14 @@
 	  #endif
   #endif
 
-	// #include <esp_idf_version.h>
-	#ifdef ESP_IDF_VERSION
-	    // #pragma message "ESP_IDF_VERSION_MAJOR = " STRING(ESP_IDF_VERSION_MAJOR)
-	    // #pragma message "ESP_IDF_VERSION_MINOR = " STRING(ESP_IDF_VERSION_MINOR)
-	    // #pragma message "ESP_IDF_VERSION_PATCH = " STRING(ESP_IDF_VERSION_PATCH)
-	    #define VER_IDF_STR STRING(ESP_IDF_VERSION_MAJOR)  "."  STRING(ESP_IDF_VERSION_MINOR)  "."  STRING(ESP_IDF_VERSION_PATCH)
+	#define WCEVO_PORTAL_DEFAULT 0
+	#define WCEVO_PORTAL_UI 1
+	#ifndef WCEVO_PORTAL
+		#define WCEVO_PORTAL WCEVO_PORTAL_UI
 	#endif
+    
+	// #include <esp_idf_version.h>
+
 
 	// #include "esp_arduino_version.h"
 	#ifdef ESP_ARDUINO_VERSION
@@ -96,6 +97,6 @@
 	    // #pragma message "ESP_ARDUINO_VERSION_REL  = " STRING(ARDUINO_ESP32_RELEASE) //"1_0_6"
 	#endif
 
-	#define G(string_literal)  (String(FPSTR(string_literal)).c_str())
-
+	#define F_EX(string_literal)  (String(FPSTR(string_literal)).c_str())
+  
 #endif // DEF_H

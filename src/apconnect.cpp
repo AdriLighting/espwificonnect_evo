@@ -20,9 +20,10 @@
 #include "wificonnectevo.h"
 
 
-const char *_apName               = "no-net";
-const char *_customHeadElement    = "";
-const char *_customOptionsElement = "";
+#if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
+  const char *_customHeadElement    = "";
+  const char *_customOptionsElement = "";  
+#endif
 
 
 void WCEVO_APconnect::init(WCEVO_server * server, DNSServer* dns, AsyncWebServer* web){
@@ -39,7 +40,7 @@ void WCEVO_APconnect::shutdown(){
   _webserver->reset();
   _dnsServer->stop(); //  free heap ?
   WiFi.softAPdisconnect(false); 
-  ALT_TRACEC("main", "Access point disabled.\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Access point disabled.\n");
 }
 
 // void WCEVO_APconnect::loop(){
@@ -47,32 +48,87 @@ void WCEVO_APconnect::shutdown(){
 // }
 
 void WCEVO_APconnect::setup_webserver(boolean webserverBegin) { 
-  ALT_TRACEC("main", "Init AP interfaces\n");
-  _webserver->on(G(R_root),       std::bind(&WCEVO_APconnect::handleRoot,         this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
-  _webserver->on("/fwlink",       std::bind(&WCEVO_APconnect::handleRoot,         this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
-  _webserver->on(G(R_wifi),       std::bind(&WCEVO_APconnect::handleWifi,         this, std::placeholders::_1, true)).setFilter(ON_AP_FILTER);
-  _webserver->on(G(R_wifisave),   std::bind(&WCEVO_APconnect::handleWifiSave,     this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->on(G(R_wifico),     std::bind(&WCEVO_APconnect::handleWifiCo,       this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->on(G(R_info),       std::bind(&WCEVO_APconnect::handleInfo,         this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
-  _webserver->on(G(R_wifimod),    std::bind(&WCEVO_APconnect::handleWifiMod,      this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
-  _webserver->on(G(R_wifisavmod), std::bind(&WCEVO_APconnect::handleWifiSaveMod,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->on(G(R_restart),    std::bind(&WCEVO_APconnect::handleReset,        this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->onNotFound(         std::bind(&WCEVO_APconnect::handleNotFound,     this, std::placeholders::_1));
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Init AP interfaces\n");
+
+  if (WCEVO_managerPtrGet()->get_cb_webserveAprEvent()) {
+    ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP setup external event webserver handle\n");
+    WCEVO_managerPtrGet()->get_cb_webserveAprEvent();
+  }
+
+  #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
+  _webserver->on(F_EX(R_root),        std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
+  _webserver->on("/fwlink",           std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+  _webserver->on("/generate_204",     std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+  _webserver->on(F_EX(R_wifi),        std::bind(&WCEVO_APconnect::handleWifi,                 this, std::placeholders::_1, false  )).setFilter(ON_AP_FILTER);
+  _webserver->on(F_EX(R_wifiScan),    std::bind(&WCEVO_APconnect::handleWifi,                 this, std::placeholders::_1, true   )).setFilter(ON_AP_FILTER);
+  _webserver->on(F_EX(R_wifisave),    std::bind(&WCEVO_APconnect::handleWifiSave,             this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_wifico),      std::bind(&WCEVO_APconnect::handleWifiCo,               this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_info),        std::bind(&WCEVO_APconnect::handleInfo_v2,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
+  _webserver->on(F_EX(R_infoAndroid), std::bind(&WCEVO_APconnect::handleInfo_v1,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
+  _webserver->on(F_EX(R_wifimod),     std::bind(&WCEVO_APconnect::handleWifiMod,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
+  _webserver->on(F_EX(R_wifisavmod),  std::bind(&WCEVO_APconnect::handleWifiSaveMod,          this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_restart),     std::bind(&WCEVO_APconnect::handleReset,                this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  #endif
+
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP register HTTP_GET request : /wcapi\n"); 
+  _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
+    DynamicJsonDocument doc(3500);
+    for (unsigned int i = 0; i < request->args(); i++) {
+      // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
+      Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
+      if (request->argName(i) == "API") {
+        WCEVO_managerPtrGet()->api_key(doc, request->arg(i) );
+      } 
+      int rSize = 0;
+      const char** split = al_tools::explode(request->arg(i), ',', rSize);
+      if (split) {
+        for(int j = 0; j < rSize; ++j) {
+          Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
+          if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, split[j]);                           
+          #ifdef ALSI_ENABLED
+          if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, split[j]);                           
+          if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, split[j]);   
+          #endif                          
+        }
+        for(int j = 0; j < rSize; ++j) {
+          delete split[j];
+        }
+        delete[] split; 
+      } else {
+        if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, request->arg(i).c_str());                           
+        #ifdef ALSI_ENABLED
+        if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
+        if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
+        #endif           
+      }       
+    }    
+    String result; 
+    serializeJson(doc,result); 
+    request->send(200, "application/json", result);
+  }).setFilter(ON_AP_FILTER);  
+
+  if (WCEVO_managerPtrGet()->get_cb_webserveAprOn()) {
+    ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP setup external http webserver handle\n");
+    WCEVO_managerPtrGet()->get_cb_webserveAprOn();
+  }
   
   if (webserverBegin) {
-    ALT_TRACEC("main", "webserverBegin\n");
+    ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP register onNotFound\n"); 
+    _webserver->onNotFound(std::bind(&WCEVO_APconnect::handleNotFound, this, std::placeholders::_1));
+
+    ALT_TRACEC(WCEVO_DEBUGREGION_AP, "AP webserverBegin\n");
     _webserver->begin();
     _serverInitialized = true;
   }
   
 }
-void WCEVO_APconnect::setup(boolean disconnect, boolean setmod, boolean webserverBegin) {
+void WCEVO_APconnect::setup(boolean isSTA, boolean setmod, boolean webserverBegin) {
 
   if(!WiFi.isConnected()){
     // this fixes most ap problems, however, simply doing mode(WIFI_AP) does not work if sta connection is hanging, must `wifi_station_disconnect` 
     WCEVO_managerPtrGet()->get_WM()->WiFi_Disconnect();
     WCEVO_managerPtrGet()->get_WM()->WiFi_enableSTA(false);
-    ALT_TRACEC("main", "Disabling STA\n");
+    ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Disabling STA\n");
   }
   else {
     // @todo even if sta is connected, it is possible that softap connections will fail, IOS says "invalid password", windows says "cannot connect to this network" researching
@@ -82,7 +138,7 @@ void WCEVO_APconnect::setup(boolean disconnect, boolean setmod, boolean webserve
   #ifdef ESP8266
     // @bug workaround for bug #4372 https://github.com/esp8266/Arduino/issues/4372
     if(!WiFi.enableAP(true)) {
-      ALT_TRACEC("main" , "[ERROR] enableAP failed!\n"); //DEBUG_ERROR
+      ALT_TRACEC(WCEVO_DEBUGREGION_AP , "[ERROR] enableAP failed!\n"); //DEBUG_ERROR
       return;
     }
   #endif
@@ -97,7 +153,7 @@ void WCEVO_APconnect::setup(boolean disconnect, boolean setmod, boolean webserve
   const char * pass;
   _server->get_apSSID(ssid);
   _server->get_apPsk(pass);
-  ALT_TRACEC("main", "Opening access point %s\n", ssid);
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Opening access point %s\n", ssid);
   // WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
 
   // use ip for android captive portal redirection (8,8,4,4 work to)  
@@ -124,7 +180,7 @@ void WCEVO_APconnect::setup(boolean disconnect, boolean setmod, boolean webserve
   setup_webserver(webserverBegin);  
 
   // done
-  ALT_TRACEC("main", "Set _AP.active to TRUE\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Set _AP.active to TRUE\n");
   _active = true; 
 }
 
@@ -144,7 +200,7 @@ boolean WCEVO_APconnect::captivePortal(AsyncWebServerRequest *request)
 {
   if (!WCEVO_managerPtrGet()->get_WM()->isIp(request->host()))
   {
-    // ALT_TRACEC("main", "Request redirected to captive portal\n");
+    // ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Request redirected to captive portal\n");
     AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "");
     response->addHeader("Location", String("http://") + WCEVO_managerPtrGet()->get_WM()->toStringIp(request->client()->localIP()));
     request->send(response);
@@ -155,7 +211,7 @@ boolean WCEVO_APconnect::captivePortal(AsyncWebServerRequest *request)
 
 void WCEVO_APconnect::handleNotFound(AsyncWebServerRequest *request)
 {
-  // ALT_TRACEC("main", "Handle not found\n");
+  // ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Handle not found\n");
   if (captivePortal(request))
   {
     // if captive portal redirect instead of displaying the error page
@@ -183,6 +239,8 @@ void WCEVO_APconnect::handleNotFound(AsyncWebServerRequest *request)
 }  
 // endregion >>>> WIFIMANAGER CAPTIVPORTAL REDIRECT
 
+
+#if WCEVO_PORTAL == WCEVO_PORTAL_UI
 /*
   void WCEVO_APconnect::handleReset(AsyncWebServerRequest *request)
   https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp#L2231-L2250
@@ -190,7 +248,7 @@ void WCEVO_APconnect::handleNotFound(AsyncWebServerRequest *request)
 */
 // region ################################################ WIFIMANAGER HANDLE RESTET
 void WCEVO_APconnect::handleReset(AsyncWebServerRequest *request) {
-  ALT_TRACEC("main", "Reset\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Reset\n");
   String page = FPSTR(WCEVO_HTTP_HEAD);
   page.replace("{v}", "Reset");
   page += FPSTR(WCEVO_HTTP_SCRIPT);
@@ -200,7 +258,7 @@ void WCEVO_APconnect::handleReset(AsyncWebServerRequest *request) {
   page += F("Module will reset in a few seconds");
   page += FPSTR(WCEVO_HTTP_END);
   request->send(200, FPSTR(HTTP_HEAD_CT), page);
-  ALT_TRACEC("main", "Sent reset page");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Sent reset page");
   delay(1000);
   ESP.restart();
 }  
@@ -460,8 +518,55 @@ String WCEVO_APconnect::getInfoData(String id){
   https://github.com/alanswx/ESPAsyncWiFiManager/blob/master/src/ESPAsyncWiFiManager.cpp#L1173-L1200
 */
 // region ################################################ WIFIMANAGER HANDLE INFO
-void WCEVO_APconnect::handleInfo(AsyncWebServerRequest *request) {
-  ALT_TRACEC("main", "Info\n");
+void WCEVO_APconnect::handleInfo_v1(AsyncWebServerRequest *request) {
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Info\n");
+  String page = FPSTR(WCEVO_HTTP_HEAD);
+  page.replace("{v}", "Info");
+  page += FPSTR(WCEVO_HTTP_SCRIPT);
+  page += FPSTR(WCEVO_HTTP_STYLE);
+  page += _customHeadElement;
+  page += FPSTR(WCEVO_HTTP_HEAD_END);
+  page += F("<h2>/info</h2><hr>");
+  page += F("<dl>");
+  String s1;
+  if (!WiFi.isConnected()) {
+    s1 = FPSTR(HTTP_INFO_con_1);
+    s1.replace(FPSTR(T_1), FPSTR(HTTP_INFO_ap));
+    page += s1;
+    s1 = FPSTR(HTTP_INFO_con_3);
+    s1.replace(FPSTR(T_1),htmlEntities(WiFi.softAPSSID()));
+    page += s1;    
+    s1 = FPSTR(HTTP_INFO_con_2);
+    s1.replace(FPSTR(T_1), WiFi.softAPIP().toString());
+    page += "<br/>"; 
+    page += s1;    
+  } else {
+    s1 = FPSTR(HTTP_INFO_con_1);
+    s1.replace(FPSTR(T_1), FPSTR(HTTP_INFO_sta));
+    page += s1;
+    s1 = FPSTR(HTTP_INFO_con_3);
+    s1.replace(FPSTR(T_1),htmlEntities((String)WCEVO_managerPtrGet()->get_WM()->WiFi_SSID(false)));
+    page += s1;        
+    s1 = FPSTR(HTTP_INFO_con_2);
+    s1.replace(FPSTR(T_1), WiFi.localIP().toString());
+    page += "<br/>"; 
+    page += s1;  
+  }
+  // if (connect == true)
+  // {
+  //   page += F("<dt>Trying to connect</dt><dd>");
+  //   page += WiFi.status();;
+  //   page += F("</dd>");
+  // }
+
+  page += F("</dl>");
+  page += FPSTR(HTTP_HOME_LINK);
+  page += FPSTR(WCEVO_HTTP_END);
+  request->send(200, FPSTR(HTTP_HEAD_CT), page);
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Sent info page\n");
+}
+void WCEVO_APconnect::handleInfo_v2(AsyncWebServerRequest *request) {
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Info\n");
   String page = FPSTR(WCEVO_HTTP_HEAD);
   page.replace("{v}", "Info");
   page += FPSTR(WCEVO_HTTP_SCRIPT);
@@ -484,7 +589,7 @@ void WCEVO_APconnect::handleInfo(AsyncWebServerRequest *request) {
   page += FPSTR(HTTP_HOME_LINK);
   page += FPSTR(WCEVO_HTTP_END);
   request->send(200, FPSTR(HTTP_HEAD_CT), page);
-  ALT_TRACEC("main", "Sent info page\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Sent info page\n");
 }
 String WCEVO_APconnect::infoAsString() {
   String page;
@@ -582,16 +687,20 @@ String WCEVO_APconnect::infoAsString() {
   https://github.com/alanswx/ESPAsyncWiFiManager/blob/master/src/ESPAsyncWiFiManager.cpp#L884-L918
 */
 // region ################################################ WIFIMANAGER HANDLE ROOT
-void WCEVO_APconnect::handleRoot(AsyncWebServerRequest *request) {
+template<class X>
+void WCEVO_APconnect::handleRoot(X *request) {
   // AJS - maybe we should set a scan when we get to the root???
   // and only scan on demand? timer + on demand? plus a link to make it happen?
-  ALT_TRACEC("main", "Handle root\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Handle root\n");
   if (captivePortal(request))
   {
     // if captive portal redirect instead of displaying the page
     return;
   }
-  ALT_TRACEC("main", "&c:1&s:\tSending Captive Portal\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "&c:1&s:\tSending Captive Portal\n");
+  
+  WCEVO_managerPtrGet()->networkScan()->list_clear();
+
   String page = FPSTR(WCEVO_HTTP_HEAD);
   page.replace("{v}", "Options");
   page += FPSTR(WCEVO_HTTP_SCRIPT);
@@ -606,7 +715,7 @@ void WCEVO_APconnect::handleRoot(AsyncWebServerRequest *request) {
   page += _customOptionsElement;
   page += FPSTR(WCEVO_HTTP_END);
   request->send(200, FPSTR(HTTP_HEAD_CT), page);
-  ALT_TRACEC("main", "&c:1&s:\tSent...\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "&c:1&s:\tSent...\n");
 }  
 // endregion >>>> WIFIMANAGER HANDLE ROOT
 
@@ -617,7 +726,7 @@ void WCEVO_APconnect::handleRoot(AsyncWebServerRequest *request) {
 */
 // region ################################################ WIFIMANAGER HANDLE WIFI
 void WCEVO_APconnect::handleWifi(AsyncWebServerRequest *request, boolean scan) {
-  ALT_TRACEC("main", "Handle wifi\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Handle wifi\n");
   String page = FPSTR(WCEVO_HTTP_HEAD);
   page.replace("{v}", "Config ESP");
   page += FPSTR(WCEVO_HTTP_SCRIPT);
@@ -639,13 +748,13 @@ void WCEVO_APconnect::handleWifi(AsyncWebServerRequest *request, boolean scan) {
   page += FPSTR(HTTP_HOME_LINK);
   page += FPSTR(WCEVO_HTTP_END);
   request->send(200, FPSTR(HTTP_HEAD_CT), page);
-  ALT_TRACEC("main", "&c:1&s:\tSent config page\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "&c:1&s:\tSent config page\n");
 }
 // endregion >>>> WIFIMANAGER HANDLE WIFI
 
 
 void WCEVO_APconnect::handleWifiMod(AsyncWebServerRequest *request) {
-  ALT_TRACEC("main", "handleWifiMod\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "handleWifiMod\n");
   String page = FPSTR(WCEVO_HTTP_HEAD);
   page.replace("{v}", "Config ESP");
   page += FPSTR(WCEVO_HTTP_SCRIPT);
@@ -701,7 +810,7 @@ void WCEVO_APconnect::handleWifiMod(AsyncWebServerRequest *request) {
   page += FPSTR(HTTP_HOME_LINK);
   page += FPSTR(WCEVO_HTTP_END);
   request->send(200, FPSTR(HTTP_HEAD_CT), page);
-  ALT_TRACEC("main", "&c:1&s:\tSent config page\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "&c:1&s:\tSent config page\n");
 }
 void WCEVO_APconnect::handleWifiSaveMod(AsyncWebServerRequest *request) {
   if(request->hasArg(F("connect_mod"))) { 
@@ -714,24 +823,22 @@ void WCEVO_APconnect::handleWifiSaveMod(AsyncWebServerRequest *request) {
   }
   WCEVO_managerPtrGet()->start();
   WCEVO_managerPtrGet()->print();
-  WCEVO_managerPtrGet()->credentials_to_fs();
+  #ifdef FILESYSTEM
+  WCEVO_managerPtrGet()->credentials_to_fs();  
+  #endif
   request->redirect(FPSTR(R_wifimod));
 }
 void WCEVO_APconnect::handleWifiCo(AsyncWebServerRequest *request) {
 
-  ALT_TRACEC("main", "handleWifiCo\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "handleWifiCo\n");
 
-  // Update of the identifiers.
-  if ((request->arg(F("s")) != "") && (request->arg(F("p")) != "")) {
-    WCEVO_managerPtrGet()->set_credential(request->arg(F("s")), request->arg(F("p")));
-  }
 
   /*
     !!!!!!!!
       si sta connect et new ssid = current ssid
         FAIL???????????????????????????
   */
-
+  // WCEVO_managerPtrGet()->credentials_to_fs();
   // >>> Default settings for connection modes.
   WCEVO_managerPtrGet()->set_cm(WCEVO_CM_STAAP);
   WCEVO_managerPtrGet()->set_cmFail(WCEVO_CF_AP);
@@ -739,7 +846,9 @@ void WCEVO_APconnect::handleWifiCo(AsyncWebServerRequest *request) {
   WCEVO_managerPtrGet()->start();
   // <<<
   // >>> Registration of credential(s) and configuration in the file system.
-  WCEVO_managerPtrGet()->credentials_to_fs();
+  #ifdef FILESYSTEM
+  WCEVO_managerPtrGet()->credentials_to_fs();  
+  #endif
   // <<<
   // >>> Debug serial print
   WCEVO_managerPtrGet()->credentials_print();
@@ -766,7 +875,7 @@ void WCEVO_APconnect::handleWifiCo(AsyncWebServerRequest *request) {
 } 
 void WCEVO_APconnect::handleWifiSave(AsyncWebServerRequest *request) {
 
-  ALT_TRACEC("main", "WiFi save\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "WiFi save\n");
 
   // Update of the identifiers.
   if ((request->arg(F("s")) != "") && (request->arg(F("p")) != ""))
@@ -777,9 +886,11 @@ void WCEVO_APconnect::handleWifiSave(AsyncWebServerRequest *request) {
   WCEVO_managerPtrGet()->credential_print(); 
 
   // Registration of credential(s) and configuration in the file system.
-  WCEVO_managerPtrGet()->credentials_to_fs();
+  #ifdef FILESYSTEM
+  WCEVO_managerPtrGet()->credentials_to_fs();  
+  #endif
 
   request->redirect(FPSTR(R_wifi));
 }  
 
-
+#endif
