@@ -50,9 +50,9 @@ void WCEVO_APconnect::shutdown(){
 void WCEVO_APconnect::setup_webserver(boolean webserverBegin) { 
   ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Init AP interfaces\n");
 
-  if (WCEVO_managerPtrGet()->get_cb_webserveAprEvent()) {
+  if (WCEVO_managerPtrGet()->_cb_webserveAprEvent) {
     ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP setup external event webserver handle\n");
-    WCEVO_managerPtrGet()->get_cb_webserveAprEvent();
+    WCEVO_managerPtrGet()->_cb_webserveAprEvent();
   }
 
   #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
@@ -71,45 +71,48 @@ void WCEVO_APconnect::setup_webserver(boolean webserverBegin) {
   #endif
 
   ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP register HTTP_GET request : /wcapi\n"); 
-  _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
-    DynamicJsonDocument doc(3500);
-    for (unsigned int i = 0; i < request->args(); i++) {
-      // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
-      Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
-      if (request->argName(i) == "API") {
-        WCEVO_managerPtrGet()->api_key(doc, request->arg(i) );
-      } 
-      int rSize = 0;
-      const char** split = al_tools::explode(request->arg(i), ',', rSize);
-      if (split) {
-        for(int j = 0; j < rSize; ++j) {
-          Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
-          if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, split[j]);                           
-          #ifdef ALSI_ENABLED
-          if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, split[j]);                           
-          if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, split[j]);   
-          #endif                          
-        }
-        for(int j = 0; j < rSize; ++j) {
-          delete split[j];
-        }
-        delete[] split; 
-      } else {
-        if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, request->arg(i).c_str());                           
-        #ifdef ALSI_ENABLED
-        if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
-        if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
-        #endif           
-      }       
-    }    
-    String result; 
-    serializeJson(doc,result); 
-    request->send(200, "application/json", result);
-  }).setFilter(ON_AP_FILTER);  
+  // _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
+  //   DynamicJsonDocument doc(3500);
+  //   for (unsigned int i = 0; i < request->args(); i++) {
+  //     // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
+  //     Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
+  //     if (request->argName(i) == "API") {
+  //       WCEVO_managerPtrGet()->api_key(doc, request->arg(i) );
+  //     } 
+  //     int rSize = 0;
+  //     const char** split = al_tools::explode(request->arg(i), ',', rSize);
+  //     if (split) {
+  //       for(int j = 0; j < rSize; ++j) {
+  //         Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
+  //         if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, split[j]);                           
+  //         #ifdef ALSI_ENABLED
+  //         if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, split[j]);                           
+  //         if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, split[j]);   
+  //         #endif                          
+  //       }
+  //       for(int j = 0; j < rSize; ++j) {
+  //         delete split[j];
+  //       }
+  //       delete[] split; 
+  //     } else {
+  //       if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, request->arg(i).c_str());                           
+  //       #ifdef ALSI_ENABLED
+  //       if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
+  //       if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
+  //       #endif           
+  //     }       
+  //   }    
+  //   String result; 
+  //   serializeJson(doc,result); 
+  //   request->send(200, "application/json", result);
+  // }).setFilter(ON_AP_FILTER);  
 
-  if (WCEVO_managerPtrGet()->get_cb_webserveAprOn()) {
+  // typedef std::function<void()> getCb_t;
+  // getCb_t getCb = WCEVO_managerPtrGet()->get_cb_webserveAprOn();
+  // 
+  if (WCEVO_managerPtrGet()->_cb_webserveAprOn) {
     ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP setup external http webserver handle\n");
-    WCEVO_managerPtrGet()->get_cb_webserveAprOn();
+    WCEVO_managerPtrGet()->_cb_webserveAprOn();
   }
   
   if (webserverBegin) {

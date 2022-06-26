@@ -800,6 +800,7 @@ void WCEVO_manager::sta_reconnect_end(boolean apSetup){
   _scanNetwork_running  = false;
   networkScan()->scan_reset();
   if (apSetup && !_APCO.get_active()) _APCO.setup();
+  ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "--\n");
 }
 
 uint32_t lastReconnectAttempt = 0;
@@ -875,7 +876,7 @@ void WCEVO_manager::sta_loop(){
           } 
         } else if (_CONNECTFAIL == wcevo_connectfail_t::WCEVO_CF_RESET) {
           if (_STACO.get_reconnectAttempt() > sta_getMaxAettemp()-1 ) {
-            ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "WCEVO_CF_RESET -> EST.restart\n")
+            ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "WCEVO_CF_RESET -> EST.restart\n");
             ESP.restart();
           } 
         }  
@@ -883,18 +884,20 @@ void WCEVO_manager::sta_loop(){
     }
   } else if (!_STACO.get_serverInitialized()){
 
+    ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "-\n");
+
     if      (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STAAP)  WiFi.mode(WIFI_AP_STA);
     else if (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STA)    WiFi.mode(WIFI_STA);
     else WiFi.mode(WIFI_STA);
+
+    ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "---\n");
 
     yield();
 
     sta_reconnect_end(false);
 
-    String duration;
     _STACO.get_lastReconnectAttempt(lastReconnectAttempt);
-    al_tools::on_time_h((millis()-lastReconnectAttempt), duration);
-    Serial.printf_P(PSTR("\n\t>>> Connected in %s IP address:"), duration.c_str());
+    Serial.printf_P(PSTR("\n\t>>> Connected to IP address:"));
     Serial.println(localIP());
 
     if (_CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STAAP){  
@@ -1022,6 +1025,19 @@ void WCEVO_manager::handleConnection(){
       _cb_serverEvent_loaded = true;
     }
   }
+
+  if (_updateMod != wcevo_updateMod_t::WCEVO_UM_UPDATED && _APCO.get_active()){
+    if (WCEVO_CONNECTED && _CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STAAP){
+      _updateMod = wcevo_updateMod_t::WCEVO_UM_STAAP;
+    }  
+    else if (WCEVO_CONNECTED &&_CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STA){
+      _updateMod = wcevo_updateMod_t::WCEVO_UM_STA;
+    }
+    else if (!_STACO.get_active()){
+      _updateMod = wcevo_updateMod_t::WCEVO_UM_AP;
+    }    
+  }
+
 
   if ((_CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STA ||_CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STAAP) && !_APCO.get_active()){
     sta_loop();

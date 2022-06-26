@@ -114,10 +114,19 @@
   extern wcevo_connectfail_t wcevo_connectfaildArray_t[];
 
 
+  typedef enum : uint8_t {
+    WCEVO_UM_STA = 0,
+    WCEVO_UM_STAAP,
+    WCEVO_UM_AP,
+    WCEVO_UM_UPDATED,
+    WCEVO_UM_NONE
+  } wcevo_updateMod_t;
+
 	class WCEVO_manager
 	{
 		typedef std::function<void()> callback_function_t;
 
+		wcevo_updateMod_t _updateMod = WCEVO_UM_NONE;
 
 		const char * config_filepath = "/wcevo_config.json";
 
@@ -150,8 +159,6 @@
 		callback_function_t _cb_serverEvent = nullptr;;
 		callback_function_t _cb_webserverEvent = nullptr;;
 		callback_function_t _cb_webserverOn = nullptr;;
-		callback_function_t _cb_webserveAprOn = nullptr;;
-		callback_function_t _cb_webserveAprEvent = nullptr;;
 		// IPAddress _udp_ip 		= {239, 0, 0, 57};
 		// IPAddress _udpMulti_ip 		= {239, 0, 0, 57};
 		// uint16_t 	_udpMulti_port 	= 9200;
@@ -163,6 +170,11 @@
 		boolean configPortalHasTimeout();
 
 	public:
+		boolean updateModReady() 	{return (_updateMod != WCEVO_UM_NONE && _updateMod != WCEVO_UM_UPDATED);}
+		wcevo_updateMod_t get_updateMod() const	{return _updateMod;}
+		void set_updateModEnd() 		{_updateMod = WCEVO_UM_UPDATED;}
+		void set_updateModOff() 	{_updateMod = WCEVO_UM_NONE;}
+
 		uint8_t _credentialPos 	= 0;
 
 		// WCEVO_manager(WCEVO_server * cr, DNSServer*dnsServer,AsyncWebServer*webserver);
@@ -182,8 +194,9 @@
 		WCEVO_APconnect							* get_AP();
 		WiFiManagerCPY 							* get_WM();
 
-		callback_function_t get_cb_webserveAprOn() {return _cb_webserveAprOn;}
-		callback_function_t get_cb_webserveAprEvent() {return _cb_webserveAprEvent;}
+		callback_function_t _cb_webserveAprOn = nullptr;;
+		callback_function_t _cb_webserveAprEvent = nullptr;;
+
 	private:
 
 		void credentials_delete();
