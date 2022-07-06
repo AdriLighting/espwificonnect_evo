@@ -122,6 +122,7 @@
     WCEVO_UM_NONE
   } wcevo_updateMod_t;
 
+
 	class WCEVO_manager
 	{
 		typedef std::function<void()> callback_function_t;
@@ -218,7 +219,7 @@
 		IPAddress localIP();
 		void 			sta_loop();
 		void 			sta_reconnect();
-		void 			sta_reconnect_end(boolean apSetup = true);
+		uint8_t 	sta_reconnect_end(boolean apSetup = true);
 		uint8_t 	sta_getMaxAettemp();
 
 		boolean _cb_serverEvent_loaded = false;
@@ -248,6 +249,9 @@
 
 		void set_credential(uint8_t);
 		void set_credential(const String &, const String &);
+		void set_credentials(uint8_t, const String &, const String &);
+
+		void get_credentials_html(String&);
 
 		void credential_print();
 

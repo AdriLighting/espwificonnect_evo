@@ -37,6 +37,8 @@
     void get_psk(const char *& result); 
     void set_tested(boolean);
     void print();
+
+    void set_psk(const char * const &, const char * const & );
   };
 
 

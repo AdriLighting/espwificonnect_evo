@@ -142,4 +142,9 @@ void WCEVO_credential::set_tested(boolean v1) {
 void WCEVO_credential::print(){
 	Serial.printf_P(PSTR("[x] ssid: %-20s psk: %-20s\n"),_sta_ssid, _sta_ssidPsk);
 }
-
+void WCEVO_credential::set_psk(const char * const & v1, const char * const &  v2){
+	if (_sta_ssid) 		{delete _sta_ssid; 		_sta_ssid = nullptr;}
+	if (_sta_ssidPsk) {delete _sta_ssidPsk; 	_sta_ssidPsk = nullptr;}	
+	bufferInit(_sta_ssid, 		v1);
+	bufferInit(_sta_ssidPsk, 	v2);	
+}

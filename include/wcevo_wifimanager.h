@@ -80,7 +80,7 @@
 
   const char HTTP_PORTAL_OPTIONS  [] PROGMEM = {
   "<form action=\"/w\"  method=\"get\"><button>Credential</button></form><br/>"
-  "<form action=\"/\"   method=\"get\"><button>Credential multiple</button></form><br/>"
+  "<form action=\"/wm\" method=\"get\"><button>Credential multiple</button></form><br/>"
   "<form action=\"/m\"  method=\"get\"><button>Server setup</button></form><br/>"
   "<form action=\"/ia\" method=\"get\"><button>Info ip</button></form><br/>"
   "<form action=\"/i\"  method=\"get\"><button>Info</button></form><br/>"
@@ -89,8 +89,11 @@
 
   const char R_root               [] PROGMEM = "/";
   const char R_wifi               [] PROGMEM = "/w";
+  const char R_wifiMulti          [] PROGMEM = "/wm";
   const char R_wifiScan           [] PROGMEM = "/wsc";
+  const char R_wifiScanMulti      [] PROGMEM = "/wscm";
   const char R_wifisave           [] PROGMEM = "/ws";
+  const char R_wifisaveMulti      [] PROGMEM = "/wsm";
   const char R_wifico             [] PROGMEM = "/wc";
   const char R_wifimod            [] PROGMEM = "/m";
   const char R_wifisavmod         [] PROGMEM = "/ms";
@@ -98,10 +101,12 @@
   const char R_infoAndroid        [] PROGMEM = "/ia";
   const char R_restart            [] PROGMEM = "/r";
 
+  const char HTTP_FORMMULTI_START [] PROGMEM = "<form method='get' action='wsm'><input id='s' name='s' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><br/><input id='c' name='c' length=32 type='number' placeholder='0'><br/>";
   const char HTTP_FORM_START      [] PROGMEM = "<form method='get' action='ws'><input id='s' name='s' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><br/>";
   const char HTTP_FORM_PARAM      [] PROGMEM = "<br/><input id='{i}' name='{n}' length={l} placeholder='{p}' value='{v}' {c}>";
   const char HTTP_FORM_END        [] PROGMEM = "<br/><button type='submit'>save</button></form>";
   const char HTTP_SCAN_LINK       [] PROGMEM = "<br/><div class=\"c\"><a href=\"/wsc\">Scan</a></div>";
+  const char HTTP_SCAN_LINKMULTI  [] PROGMEM = "<br/><div class=\"c\"><a href=\"/wscm\">Scan</a></div>";
   // const char HTTP_SCANR_LINK    [] PROGMEM = "<div class=\"c\"><a href=\"/scanr\">Reset scan</a></div>";
   const char HTTP_HOME_LINK       [] PROGMEM = "<div class=\"c\"><a href=\"/\">Home</a></div>";
   const char HTTP_SAVED           [] PROGMEM = "<div>Credentials Saved<br />Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";

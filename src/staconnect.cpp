@@ -17,9 +17,11 @@ void WCEVO_STAconnect::set_wasConnected(boolean v1)       {_wasConnected = v1;}
 void WCEVO_STAconnect::set_active(boolean v1)             {_active = v1;}
 void WCEVO_STAconnect::set_serverInitialized(boolean v1)  {_serverInitialized = v1;}
 void WCEVO_STAconnect::set_lastReconnectAttempt()	        {_lastReconnectAttempt = millis();}
-void WCEVO_STAconnect::set_reconnectAttempt(boolean v1){
+uint8_t WCEVO_STAconnect::set_reconnectAttempt(boolean v1){
+  uint8_t ret=0;
 	if (v1) _reconnectAttempt++;
-	else _reconnectAttempt = 0;
+	else {ret=_reconnectAttempt;_reconnectAttempt = 0;}
+  return ret;
 }
 
 void WCEVO_STAconnect::reset() {
@@ -73,7 +75,7 @@ boolean WCEVO_STAconnect::setup() {
     ALT_TRACEC(WCEVO_DEBUGREGION_STA, "[FATAL] no ssid find in scan network list\n");
     return false;
   }
-  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Attemp to connect to [ssid: %s] [psk: %s]\n", ssid, pass);
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "attempt to connect to the router [ssid: %s] [psk: %s]\n", ssid, pass);
   //
 
   // reset timer
@@ -86,31 +88,43 @@ boolean WCEVO_STAconnect::setup() {
   //   WCEVO_managerPtrGet()->get_AP()->set_active(false);
   // }
 
-  // attempt to connect using saved settings, on fail fallback to AP config portal
+  // ALT_TRACEC(WCEVO_DEBUGREGION_STA, "WiFi disconnect false\n");  
+  // WiFi.disconnect(false);
+
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "wifi_station_disconnect\n");  
+  ETS_UART_INTR_DISABLE ();
+  wifi_station_disconnect ();
+  ETS_UART_INTR_ENABLE ();
+
+  // WCEVO_managerPtrGet()->get_WM()->WiFi_Disconnect();
+
   if(!WiFi.enableSTA(true)){
-    // handle failure mode Brownout detector etc.
     ALT_TRACEC(WCEVO_DEBUGREGION_STA,"[FATAL] Unable to enable wifi!\n");
     return false;
-  } else {ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set enableSTA(true) succes\n");}
+  } else {ALT_TRACEC(WCEVO_DEBUGREGION_STA, "WiFi enableSTA true -> succes\n");}
   
-  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set autoReconnect to TRUE\n");
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "WiFi autoReconnect true\n");
   WiFi.setAutoReconnect(true);
 
-  // #ifdef ESP8266
-    const char * hostName = "wcevo";
-    _server->get_hostName(hostName);  
-    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "Set hostname: %s\n", hostName);  
-    WiFi.hostname(hostName);
-  // #endif   
+  // ALT_TRACEC(WCEVO_DEBUGREGION_STA, "WiFi persistent: true\n");
+  // WiFi.persistent(true);
 
-  // WiFi.disconnect(true);
-  WCEVO_managerPtrGet()->get_WM()->WiFi_Disconnect();
 
   // if      (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STAAP)  WiFi.mode(WIFI_AP_STA);
   // else if (WCEVO_managerPtrGet()->get_cm()==WCEVO_CM_STA)    WiFi.mode(WIFI_STA);
   // else WiFi.mode(WIFI_STA);
-
+  // 
+  ALT_TRACEC(WCEVO_DEBUGREGION_STA, "WiFi mode: WIFI_STA\n");  
   WiFi.mode(WIFI_STA);
+
+  // #ifdef ESP8266
+    const char * hostName = "wcevo";
+    _server->get_hostName(hostName);  
+    ALT_TRACEC(WCEVO_DEBUGREGION_STA, "WiFi hostname: %s\n", hostName);  
+    WiFi.hostname(hostName);
+  // #endif   
+
+
   WiFi.begin(ssid, pass);
 
   if (!_active) {

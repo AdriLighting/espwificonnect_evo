@@ -57,14 +57,14 @@ WCEVO_credential * _temp_WCEVO_credential = nullptr;
 WCEVO_manager * WCEVO_managerPtr = nullptr;
 WCEVO_manager * WCEVO_managerPtrGet(){return WCEVO_managerPtr;}
 void WCEVO_manager::init(const char * const & Host, const char * const & APpass, const char * const & OTApass){
-  #ifdef DEBUG_KEYBOARD
-  _Sr_menu.add("wifi_api", "r", [this]() { keyboard_print(); });
-  _Sr_menu.add("wifi_getter", "@", [this](const String & v1, const String & v2) {  
-    Serial.printf_P(PSTR("CMD: %s - VAL: %s\n"), v1.c_str(), v2.c_str());
-    keyboard_getter(v1);    
-  }, SR_MM::SRMM_KEYVAL);  
-  #endif 
-  _temp_WCEVO_credential = new WCEVO_credential("", "");
+  // #ifdef DEBUG_KEYBOARD
+  //   _Sr_menu.add((const char *)"wifi_api",    (const char *)"r", [this]() { keyboard_print(); });
+  //   _Sr_menu.add((const char *)"wifi_getter", (const char *)"@", [this](const String & v1, const String & v2) {  
+  //     Serial.printf_P(PSTR("CMD: %s - VAL: %s\n"), v1.c_str(), v2.c_str());
+  //     keyboard_getter(v1);    
+  //   }, SR_MM::SRMM_KEYVAL);  
+  // #endif 
+  _temp_WCEVO_credential = new WCEVO_credential((const char *)"", (const char *)"");
   _server = new WCEVO_server(Host,APpass,OTApass);  
   _APCO.init(_server, _dnsServer, _webserver);
   _STACO.init(_server);   
@@ -87,7 +87,7 @@ WCEVO_manager::WCEVO_manager( const char * const & Host, DNSServer*dnsServer, As
 WCEVO_manager::WCEVO_manager( DNSServer*dnsServer, AsyncWebServer*webserver) : 
   _webserver(webserver), _dnsServer(dnsServer) {
   WCEVO_managerPtr = this;
-  init("wcevo","","wcevo_1234");  
+  init((const char *)"wcevo",(const char *)"",(const char *)"wcevo_1234");  
 }
 
 // WCEVO_manager::WCEVO_manager(WCEVO_server * ptr, DNSServer*dnsServer,AsyncWebServer*webserver){
@@ -185,6 +185,16 @@ void WCEVO_manager::set_credential(const String & ssid,const String & psk){
   _credential = _temp_WCEVO_credential;
 }
 
+void WCEVO_manager::set_credentials(uint8_t p, const String & ssid, const String & psk){
+  if (p >= _credentials.size()) return;
+  WCEVO_credential * ptr = _credentials.get(p);
+  char b_ssid[ssid.length()+1];
+  char b_psk[psk.length()+1];
+  sprintf(b_ssid, "%s", ssid.c_str());
+  sprintf(b_psk, "%s", psk.c_str());
+  ptr->set_psk(b_ssid, b_psk);
+}
+
 
 uint8_t WCEVO_manager::credentials_add(const char * const & v1, const char * const & v2){
   _credentials.add( new WCEVO_credential(v1, v2) ); 
@@ -218,6 +228,18 @@ WCEVO_credential * WCEVO_manager::credential_getBestSSID(){
   return _credentials.get(pos);
 }
 
+
+
+void WCEVO_manager::get_credentials_html(String & result){
+  const char * ssid;
+  const char * psk;  
+  for(uint8_t i = 0; i < _credentials.size(); ++i) {
+    WCEVO_credential * item = _credentials.get(i);
+    item->get_ssid(ssid);
+    item->get_psk(psk);
+    result += "<dt>"+al_tools::ch_toString(ssid)+"</dt><dd>"+al_tools::ch_toString(psk)+"</dd>";
+  }
+}
 
 // FPSTR(WCEVO_PTJSON_002)
 void WCEVO_manager::get_credential_json(WCEVO_credential * ptr, JsonArray & arr_1){
@@ -363,10 +385,10 @@ void WCEVO_manager::keyboard_getter(const String & v1) {
     if (split) {
       for(int i = 0; i < rSize; ++i) {
         Serial.printf_P(PSTR("[%d] %s\n"), i , split[i]);
-        if (strcmp_P(_SplitItem[j]->_cmd, "WC") == 0)     api_getter(doc, split[i]);                           
+        if (strcmp_P(_SplitItem[j]->_cmd, "wc") == 0)     api_getter(doc, split[i]);                           
         #ifdef ALSI_ENABLED
-        if (strcmp_P(_SplitItem[j]->_cmd, "ALSI") == 0)   ALSYSINFO_getterByCat(doc, split[i]);                           
-        if (strcmp_P(_SplitItem[j]->_cmd, "ALSII") == 0)  ALSYSINFO_getterByKey(doc, split[i]);   
+        if (strcmp_P(_SplitItem[j]->_cmd, "alsi") == 0)   ALSYSINFO_getterByCat(doc, split[i]);                           
+        if (strcmp_P(_SplitItem[j]->_cmd, "alsii") == 0)  ALSYSINFO_getterByKey(doc, split[i]);   
         #endif                          
       }
       for(int i = 0; i < rSize; ++i) {
@@ -374,10 +396,10 @@ void WCEVO_manager::keyboard_getter(const String & v1) {
       }
       delete[] split; 
     } else {
-        if (strcmp_P(_SplitItem[j]->_cmd, "WC") == 0)     api_getter(doc, _SplitItem[j]->_value);                           
+        if (strcmp_P(_SplitItem[j]->_cmd, "wc") == 0)     api_getter(doc, _SplitItem[j]->_value);                           
         #ifdef ALSI_ENABLED
-        if (strcmp_P(_SplitItem[j]->_cmd, "ALSI") == 0)   ALSYSINFO_getterByCat(doc, _SplitItem[j]->_value);                           
-        if (strcmp_P(_SplitItem[j]->_cmd, "ALSII") == 0)  ALSYSINFO_getterByKey(doc, _SplitItem[j]->_value);   
+        if (strcmp_P(_SplitItem[j]->_cmd, "alsi") == 0)   ALSYSINFO_getterByCat(doc, _SplitItem[j]->_value);                           
+        if (strcmp_P(_SplitItem[j]->_cmd, "alsii") == 0)  ALSYSINFO_getterByKey(doc, _SplitItem[j]->_value);   
         #endif        
     }
   }
@@ -442,6 +464,12 @@ void WCEVO_manager::api_key(DynamicJsonDocument & doc, const String & arg) {
   JsonArray wccat, wccat_item, wccat_subitem_a1, wccat_subitem_a2;
   JsonObject  main        = doc.createNestedObject(F("api"));
 
+  JsonArray key = main.createNestedArray(F("api-keys"));
+  key.add(F("wc"));
+  key.add(F("wci"));
+  key.add(F("alsi"));
+  key.add(F("alsii"));
+  
   if (pr_wc) {
     JsonObject  wc          = main.createNestedObject(F("wc"));
                 wccat       = wc.createNestedArray(F("cat"));
@@ -555,11 +583,7 @@ void WCEVO_manager::api_key(DynamicJsonDocument & doc, const String & arg) {
 
 }
 void WCEVO_manager::keyboard_print() {
-  Serial.printf_P(PSTR("@&WC:0,server=\n"));
-  Serial.printf_P(PSTR("@&ALSI:0,Network=\n"));
-  Serial.printf_P(PSTR("@&ALSI:0,Network&WC:0,server=\n"));
-  Serial.printf_P(PSTR("WC\n"));
-
+  Serial.printf_P(PSTR("@&wc:0,server=\n"));
   Serial.printf_P(PSTR("[%-3d] %s\n"), 0, WCEVO_PTJSON_001);
   Serial.printf_P(PSTR("[%-3d] %s\n"), 1, WCEVO_PTJSON_002);
   Serial.printf_P(PSTR("[%-3d] %s\n"), 2, WCEVO_PTJSON_003);
@@ -571,17 +595,7 @@ void WCEVO_manager::keyboard_print() {
   Serial.printf_P(PSTR("[%-3d]\t%s\n"), 8, WCEVO_PTJSON_009);
   Serial.printf_P(PSTR("[%-3d]\t%s\n"), 9, WCEVO_PTJSON_010);
   Serial.printf_P(PSTR("[%-3d] %s\n"), 10, WCEVO_PTJSON_011);
-  #ifdef ALSI_ENABLED
-    Serial.printf_P(PSTR("\nALSI\n"));
-    for(int i = 0; i < ALSI_CATEGORYSIZE; ++i) {
-      Serial.printf_P(PSTR("[%-3d] %s\n"), i, ALSI_CATEGORY[i]);
-      for(int j = 0; j < ALSI_ITEMSSIZE; ++j) {
-        if (ALSI_items[j].GRP == ALSI_CATEGORY[i]) {
-          Serial.printf_P(PSTR("[%-3d]\t%s\n"), j, ALSI_items[j].NAME);  
-        }
-      }   
-    }   
-  #endif  
+
 }
 #ifdef FILESYSTEM
 /*
@@ -647,7 +661,7 @@ void WCEVO_manager::credentials_to_fs(boolean cu, wcevo_connectmod_t cm, wcevo_c
   DynamicJsonDocument doc(2048);
   get_credentials_json(_temp_WCEVO_credential, doc);
   doc[FPSTR(WCEVO_PTJSON_008)]  = (cm==WCEVO_CM_NONE  )?_CONNECTMOD:cm;
-  doc[FPSTR(WCEVO_PTJSON_009)] = (cmf==WCEVO_CF_NONE )?_CONNECTFAIL:cmf;
+  doc[FPSTR(WCEVO_PTJSON_009)]  = (cmf==WCEVO_CF_NONE )?_CONNECTFAIL:cmf;
   doc[FPSTR(WCEVO_PTJSON_010)]  = cu;
   serializeJson(doc, f);   
   serializeJsonPretty(doc, Serial);
@@ -792,15 +806,16 @@ void WCEVO_manager::sta_reconnect(){
     _STACO.setup();
   }  
 }
-void WCEVO_manager::sta_reconnect_end(boolean apSetup){
+uint8_t WCEVO_manager::sta_reconnect_end(boolean apSetup){
   ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "-\n")
-  _STACO.set_reconnectAttempt(false);
+  uint8_t attemp = _STACO.set_reconnectAttempt(false);
   if (_CONNECTFAIL != wcevo_connectfail_t::WCEVO_CF_NEXTAP) _STACO.set_lastReconnectAttempt();
   _credential           = nullptr;
   _scanNetwork_running  = false;
   networkScan()->scan_reset();
   if (apSetup && !_APCO.get_active()) _APCO.setup();
   ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "--\n");
+  return attemp;
 }
 
 uint32_t lastReconnectAttempt = 0;
@@ -843,7 +858,7 @@ void WCEVO_manager::sta_loop(){
   */
   if (_STACO.get_wasConnected() && !isConnected() && _STACO.get_serverInitialized() ) { 
     Serial.println("DISCONNECTED !!!");
-    ESP.restart();
+    // ESP.restart();
   }
 
   if ( !isConnected()  ) {
@@ -853,12 +868,12 @@ void WCEVO_manager::sta_loop(){
     if (_CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STA || _CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STAAP ) {
 
       _STACO.get_lastReconnectAttempt(lastReconnectAttempt);
-      if (_STACO.get_reconnectAttempt() <= sta_getMaxAettemp() && !_APCO.get_active() && !_scanNetwork_running && (millis() - lastReconnectAttempt > 20000) ){
+      if (_STACO.get_reconnectAttempt() <= sta_getMaxAettemp() && !_APCO.get_active() && !_scanNetwork_running && (millis() - lastReconnectAttempt > 45000) ){
         sta_reconnect();
       } 
 
       _STACO.get_lastReconnectAttempt(lastReconnectAttempt);
-      if (!_APCO.get_active() && !_scanNetwork_running && (millis() - lastReconnectAttempt > 20000) ){
+      if (!_APCO.get_active() && !_scanNetwork_running && (millis() - lastReconnectAttempt > 45000) ){
         if (_CONNECTFAIL == wcevo_connectfail_t::WCEVO_CF_NEXTAP) {
           if (_STACO.get_reconnectAttempt() > sta_getMaxAettemp()-1 ) {
             if (_scanNetwork_gotSSID) {
@@ -894,11 +909,14 @@ void WCEVO_manager::sta_loop(){
 
     yield();
 
-    sta_reconnect_end(false);
+    uint8_t attemp = sta_reconnect_end(false);
 
     _STACO.get_lastReconnectAttempt(lastReconnectAttempt);
+    uint32_t diff = millis() - lastReconnectAttempt ;
+    String diffStr; al_tools::on_time_h(diff, diffStr);
     Serial.printf_P(PSTR("\n\t>>> Connected to IP address:"));
-    Serial.println(localIP());
+    Serial.print(localIP());
+    Serial.printf_P(PSTR(" in: %s attemp: %d - from: %s\n"), diffStr.c_str(), attemp, WiFi.SSID().c_str());
 
     if (_CONNECTMOD == wcevo_connectmod_t::WCEVO_CM_STAAP){  
       if (!_APCO.get_active()) _APCO.setup(false, false, false);
@@ -922,21 +940,49 @@ void WCEVO_manager::sta_loop(){
     ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "STA register HTTP_GET request : /wcapi\n"); 
     _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
       DynamicJsonDocument doc(3500);
+      int rSize = 0;
       for (unsigned int i = 0; i < request->args(); i++) {
         // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
         Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
-        if (request->argName(i) == "API") {
+
+        if (request->argName(i) == "api") {
           api_key(doc, request->arg(i) );
         } 
-        int rSize = 0;
+
+        if (request->argName(i) == "set_cm") {
+          // 
+          wcevo_connectmod_t mod = wcevo_connectmodArray_t[request->arg(i).toInt()];
+          set_cm(mod);
+          api_getter(doc, "server");
+          api_getter(doc, "connection");
+        } 
+
+        if (request->argName(i) == "set_cmFail") {
+          // 
+          wcevo_connectfail_t mod = wcevo_connectfaildArray_t[request->arg(i).toInt()];
+          set_cmFail(mod);
+          api_getter(doc, "server");
+          api_getter(doc, "connection"); 
+        } 
+
+        if (request->argName(i) == "to_fs") {
+          #ifdef FILESYSTEM
+            credentials_to_fs();
+            credentials_from_fs();
+            api_getter(doc, "server");
+            api_getter(doc, "connection");   
+          #endif          
+        } 
+
+        rSize = 0;
         const char** split = al_tools::explode(request->arg(i), ',', rSize);
         if (split) {
           for(int j = 0; j < rSize; ++j) {
             Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
-            if (request->argName(i) == "WC")      api_getter(doc, split[j]);                           
+            if (request->argName(i) == "wc")      api_getter(doc, split[j]);                           
             #ifdef ALSI_ENABLED
-            if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, split[j]);                           
-            if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, split[j]);   
+            if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, split[j]);                           
+            if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, split[j]);   
             #endif                          
           }
           for(int j = 0; j < rSize; ++j) {
@@ -944,10 +990,10 @@ void WCEVO_manager::sta_loop(){
           }
           delete[] split; 
         } else {
-          if (request->argName(i) == "WC")      api_getter(doc, request->arg(i).c_str());                           
+          if (request->argName(i) == "wc")      api_getter(doc, request->arg(i).c_str());                           
           #ifdef ALSI_ENABLED
-          if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
-          if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
+          if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
+          if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
           #endif           
         }       
       }    

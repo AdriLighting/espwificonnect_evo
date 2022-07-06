@@ -68,8 +68,10 @@
 
       void handleScanReset(AsyncWebServerRequest *request);   
       void handleWifi(AsyncWebServerRequest *request, boolean scan);    
+      void handleWifiMulti(AsyncWebServerRequest *request, boolean scan);    
       void handleWifiMod(AsyncWebServerRequest *request);    
       void handleWifiSave(AsyncWebServerRequest *request);   
+      void handleWifiSaveMulti(AsyncWebServerRequest *request);   
       void handleWifiSaveMod(AsyncWebServerRequest *request);   
       void handleWifiCo(AsyncWebServerRequest *request);   
       void handleExit(AsyncWebServerRequest *request);   

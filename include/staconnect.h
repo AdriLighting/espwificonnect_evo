@@ -98,7 +98,7 @@
     boolean get_wasConnected();
     void set_wasConnected(boolean);
     void set_serverInitialized(boolean);
-    void set_reconnectAttempt(boolean);
+    uint8_t set_reconnectAttempt(boolean);
     void set_lastReconnectAttempt();
 
   };

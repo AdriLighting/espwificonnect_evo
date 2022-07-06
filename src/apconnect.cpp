@@ -56,56 +56,63 @@ void WCEVO_APconnect::setup_webserver(boolean webserverBegin) {
   }
 
   #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)
-  _webserver->on(F_EX(R_root),        std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
-  _webserver->on("/fwlink",           std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
-  _webserver->on("/generate_204",     std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
-  _webserver->on(F_EX(R_wifi),        std::bind(&WCEVO_APconnect::handleWifi,                 this, std::placeholders::_1, false  )).setFilter(ON_AP_FILTER);
-  _webserver->on(F_EX(R_wifiScan),    std::bind(&WCEVO_APconnect::handleWifi,                 this, std::placeholders::_1, true   )).setFilter(ON_AP_FILTER);
-  _webserver->on(F_EX(R_wifisave),    std::bind(&WCEVO_APconnect::handleWifiSave,             this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->on(F_EX(R_wifico),      std::bind(&WCEVO_APconnect::handleWifiCo,               this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->on(F_EX(R_info),        std::bind(&WCEVO_APconnect::handleInfo_v2,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
-  _webserver->on(F_EX(R_infoAndroid), std::bind(&WCEVO_APconnect::handleInfo_v1,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
-  _webserver->on(F_EX(R_wifimod),     std::bind(&WCEVO_APconnect::handleWifiMod,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
-  _webserver->on(F_EX(R_wifisavmod),  std::bind(&WCEVO_APconnect::handleWifiSaveMod,          this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
-  _webserver->on(F_EX(R_restart),     std::bind(&WCEVO_APconnect::handleReset,                this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_root),          std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
+  _webserver->on("/fwlink",             std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+  _webserver->on("/generate_204",       std::bind(&WCEVO_APconnect::handleRoot<SERVERREQUEST>,  this, std::placeholders::_1)).setFilter(ON_AP_FILTER); // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+  
+  _webserver->on(F_EX(R_wifi),          std::bind(&WCEVO_APconnect::handleWifi,                 this, std::placeholders::_1, false  )).setFilter(ON_AP_FILTER);
+  _webserver->on(F_EX(R_wifiMulti),     std::bind(&WCEVO_APconnect::handleWifiMulti,            this, std::placeholders::_1, false  )).setFilter(ON_AP_FILTER);
+  
+  _webserver->on(F_EX(R_wifiScan),      std::bind(&WCEVO_APconnect::handleWifi,                 this, std::placeholders::_1, true   )).setFilter(ON_AP_FILTER);
+  _webserver->on(F_EX(R_wifiScanMulti), std::bind(&WCEVO_APconnect::handleWifiMulti,            this, std::placeholders::_1, true   )).setFilter(ON_AP_FILTER);
+
+  _webserver->on(F_EX(R_wifisave),      std::bind(&WCEVO_APconnect::handleWifiSave,             this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_wifisaveMulti), std::bind(&WCEVO_APconnect::handleWifiSaveMulti,        this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+
+  _webserver->on(F_EX(R_wifico),        std::bind(&WCEVO_APconnect::handleWifiCo,               this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_info),          std::bind(&WCEVO_APconnect::handleInfo_v2,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
+  _webserver->on(F_EX(R_infoAndroid),   std::bind(&WCEVO_APconnect::handleInfo_v1,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);          
+  _webserver->on(F_EX(R_wifimod),       std::bind(&WCEVO_APconnect::handleWifiMod,              this, std::placeholders::_1)).setFilter(ON_AP_FILTER);
+  _webserver->on(F_EX(R_wifisavmod),    std::bind(&WCEVO_APconnect::handleWifiSaveMod,          this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
+  _webserver->on(F_EX(R_restart),       std::bind(&WCEVO_APconnect::handleReset,                this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
   #endif
 
   ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP register HTTP_GET request : /wcapi\n"); 
-  // _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
-  //   DynamicJsonDocument doc(3500);
-  //   for (unsigned int i = 0; i < request->args(); i++) {
-  //     // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
-  //     Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
-  //     if (request->argName(i) == "API") {
-  //       WCEVO_managerPtrGet()->api_key(doc, request->arg(i) );
-  //     } 
-  //     int rSize = 0;
-  //     const char** split = al_tools::explode(request->arg(i), ',', rSize);
-  //     if (split) {
-  //       for(int j = 0; j < rSize; ++j) {
-  //         Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
-  //         if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, split[j]);                           
-  //         #ifdef ALSI_ENABLED
-  //         if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, split[j]);                           
-  //         if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, split[j]);   
-  //         #endif                          
-  //       }
-  //       for(int j = 0; j < rSize; ++j) {
-  //         delete split[j];
-  //       }
-  //       delete[] split; 
-  //     } else {
-  //       if (request->argName(i) == "WC")      WCEVO_managerPtrGet()->api_getter(doc, request->arg(i).c_str());                           
-  //       #ifdef ALSI_ENABLED
-  //       if (request->argName(i) == "ALSI")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
-  //       if (request->argName(i) == "ALSII")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
-  //       #endif           
-  //     }       
-  //   }    
-  //   String result; 
-  //   serializeJson(doc,result); 
-  //   request->send(200, "application/json", result);
-  // }).setFilter(ON_AP_FILTER);  
+  _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
+    DynamicJsonDocument doc(3500);
+    for (unsigned int i = 0; i < request->args(); i++) {
+      // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
+      Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
+      if (request->argName(i) == "api") {
+        WCEVO_managerPtrGet()->api_key(doc, request->arg(i) );
+      } 
+      int rSize = 0;
+      const char** split = al_tools::explode(request->arg(i), ',', rSize);
+      if (split) {
+        for(int j = 0; j < rSize; ++j) {
+          Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
+          if (request->argName(i) == "wc")      WCEVO_managerPtrGet()->api_getter(doc, split[j]);                           
+          #ifdef ALSI_ENABLED
+          if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, split[j]);                           
+          if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, split[j]);   
+          #endif                          
+        }
+        for(int j = 0; j < rSize; ++j) {
+          delete split[j];
+        }
+        delete[] split; 
+      } else {
+        if (request->argName(i) == "wc")      WCEVO_managerPtrGet()->api_getter(doc, request->arg(i).c_str());                           
+        #ifdef ALSI_ENABLED
+        if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
+        if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
+        #endif           
+      }       
+    }    
+    String result; 
+    serializeJson(doc,result); 
+    request->send(200, "application/json", result);
+  }).setFilter(ON_AP_FILTER);  
 
   // typedef std::function<void()> getCb_t;
   // getCb_t getCb = WCEVO_managerPtrGet()->get_cb_webserveAprOn();
@@ -156,7 +163,7 @@ void WCEVO_APconnect::setup(boolean isSTA, boolean setmod, boolean webserverBegi
   const char * pass;
   _server->get_apSSID(ssid);
   _server->get_apPsk(pass);
-  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Opening access point %s\n", ssid);
+  Serial.printf_P(PSTR("\n\t>>> Opening access point - ssid: %s psk: %s - ip: 8.8.8.8, gateway/subnet: 255.255.255.0\n\n"), ssid, pass);
   // WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
 
   // use ip for android captive portal redirection (8,8,4,4 work to)  
@@ -753,6 +760,36 @@ void WCEVO_APconnect::handleWifi(AsyncWebServerRequest *request, boolean scan) {
   request->send(200, FPSTR(HTTP_HEAD_CT), page);
   ALT_TRACEC(WCEVO_DEBUGREGION_AP, "&c:1&s:\tSent config page\n");
 }
+void WCEVO_APconnect::handleWifiMulti(AsyncWebServerRequest *request, boolean scan) {
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "Handle wifi\n");
+  String page = FPSTR(WCEVO_HTTP_HEAD);
+  page.replace("{v}", "Config ESP");
+  page += FPSTR(WCEVO_HTTP_SCRIPT);
+  page += FPSTR(WCEVO_HTTP_STYLE);
+  page += _customHeadElement;
+  page += FPSTR(WCEVO_HTTP_HEAD_END);
+  page += WCEVO_managerPtrGet()->networkScan()->networkListAsString(scan);
+  page += F("<br/>");
+  page += F("<label style=\"font-weight: 700;\">Credentials from filesystem</label><br/><br/>");
+  String credentials = "";
+  WCEVO_managerPtrGet()->get_credentials_html(credentials);
+  page += credentials;
+  page += F("<br/>");
+  page += FPSTR(HTTP_FORMMULTI_START);
+  page += F("<br/>");
+  page += FPSTR(HTTP_FORM_END);
+  page += F("<br/>");
+  // String bt = FPSTR(HTTP_BT);
+  // bt.replace("{i}", "wc");
+  // bt.replace("{n}", "Connection");
+  // page += bt;
+  // page += F("<br/>");
+  page += FPSTR(HTTP_SCAN_LINKMULTI);
+  page += FPSTR(HTTP_HOME_LINK);
+  page += FPSTR(WCEVO_HTTP_END);
+  request->send(200, FPSTR(HTTP_HEAD_CT), page);
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "&c:1&s:\tSent config page\n");
+}
 // endregion >>>> WIFIMANAGER HANDLE WIFI
 
 
@@ -876,6 +913,29 @@ void WCEVO_APconnect::handleWifiCo(AsyncWebServerRequest *request) {
 
   // <<<
 } 
+void WCEVO_APconnect::handleWifiSaveMulti(AsyncWebServerRequest *request) {
+
+  ALT_TRACEC(WCEVO_DEBUGREGION_AP, "WiFi save\n");
+
+  // Update of the identifiers.
+  if ((request->arg(F("s")) != "") && (request->arg(F("p")) != "") && (request->arg(F("c")) != "")) {
+    uint8_t p = request->arg(F("c")).toInt();
+    WCEVO_managerPtrGet()->set_credentials(p, request->arg(F("s")), request->arg(F("p")) );
+
+    // WCEVO_managerPtrGet()->set_credential(request->arg(F("s")), request->arg(F("p")));
+  }
+
+  // Debug serial print
+  WCEVO_managerPtrGet()->credentials_print();
+  WCEVO_managerPtrGet()->credential_print(); 
+
+  // Registration of credential(s) and configuration in the file system.
+  #ifdef FILESYSTEM
+  WCEVO_managerPtrGet()->credentials_to_fs();  
+  #endif
+
+  request->redirect(FPSTR(R_wifiMulti));
+}  
 void WCEVO_APconnect::handleWifiSave(AsyncWebServerRequest *request) {
 
   ALT_TRACEC(WCEVO_DEBUGREGION_AP, "WiFi save\n");
