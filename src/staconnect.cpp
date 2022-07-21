@@ -2,13 +2,13 @@
 #include "wificonnectevo.h"
 
 void WCEVO_STAconnect::init(WCEVO_server * server){
-	_server = server; 
+  _server = server; 
 }
 
-uint8_t WCEVO_STAconnect::get_reconnectAttempt() 									{return _reconnectAttempt;}
-void 		WCEVO_STAconnect::get_reconnectAttempt(uint8_t & v1)			{v1 = _reconnectAttempt;}
-void 		WCEVO_STAconnect::get_lastReconnectAttempt(uint32_t & v1)	{v1 = _lastReconnectAttempt;}
-boolean WCEVO_STAconnect::get_active()  													{return _active;}
+uint8_t WCEVO_STAconnect::get_reconnectAttempt()                  {return _reconnectAttempt;}
+void    WCEVO_STAconnect::get_reconnectAttempt(uint8_t & v1)      {v1 = _reconnectAttempt;}
+void    WCEVO_STAconnect::get_lastReconnectAttempt(uint32_t & v1) {v1 = _lastReconnectAttempt;}
+boolean WCEVO_STAconnect::get_active()                            {return _active;}
 boolean WCEVO_STAconnect::get_serverInitialized()                 {return _serverInitialized;}
 boolean WCEVO_STAconnect::get_wasConnected()                      {return _wasConnected;}
 
@@ -16,11 +16,11 @@ boolean WCEVO_STAconnect::get_wasConnected()                      {return _wasCo
 void WCEVO_STAconnect::set_wasConnected(boolean v1)       {_wasConnected = v1;}
 void WCEVO_STAconnect::set_active(boolean v1)             {_active = v1;}
 void WCEVO_STAconnect::set_serverInitialized(boolean v1)  {_serverInitialized = v1;}
-void WCEVO_STAconnect::set_lastReconnectAttempt()	        {_lastReconnectAttempt = millis();}
+void WCEVO_STAconnect::set_lastReconnectAttempt()         {_lastReconnectAttempt = millis();}
 uint8_t WCEVO_STAconnect::set_reconnectAttempt(boolean v1){
   uint8_t ret=0;
-	if (v1) _reconnectAttempt++;
-	else {ret=_reconnectAttempt;_reconnectAttempt = 0;}
+  if (v1) _reconnectAttempt++;
+  else {ret=_reconnectAttempt;_reconnectAttempt = 0;}
   return ret;
 }
 
@@ -29,10 +29,10 @@ void WCEVO_STAconnect::reset() {
   WCEVO_managerPtrGet()->set_scanNetwork_running(false);
   WCEVO_managerPtrGet()->set_scanNetwork_requiered(false);
   WCEVO_managerPtrGet()->networkScan()->scan_reset();
-	
+  
   // reset timer
   _lastReconnectAttempt = 0;
-	_reconnectAttempt 		= 0;	
+  _reconnectAttempt     = 0;  
 
 
   _serverInitialized    = false;
@@ -92,10 +92,14 @@ boolean WCEVO_STAconnect::setup() {
   // WiFi.disconnect(false);
 
   ALT_TRACEC(WCEVO_DEBUGREGION_STA, "wifi_station_disconnect\n");  
-  ETS_UART_INTR_DISABLE ();
-  wifi_station_disconnect ();
-  ETS_UART_INTR_ENABLE ();
 
+    #if defined(ESP8266)
+      ETS_UART_INTR_DISABLE ();
+      wifi_station_disconnect ();
+      ETS_UART_INTR_ENABLE ();  
+    #elif defined(ESP32)
+      WCEVO_managerPtrGet()->get_WM()->WiFi_Disconnect();
+    #endif
   // WCEVO_managerPtrGet()->get_WM()->WiFi_Disconnect();
 
   if(!WiFi.enableSTA(true)){

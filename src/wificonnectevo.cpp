@@ -51,6 +51,7 @@ WCEVO_credential * _temp_WCEVO_credential = nullptr;
     WCEVO_CF_RESET,
     WCEVO_CF_NEXTAP,
     WCEVO_CF_AP,
+    WCEVO_CF_CALLBACK,
     WCEVO_CF_NONE
     };
 
@@ -838,6 +839,7 @@ void WCEVO_manager::sta_loop(){
       _scanNetwork_running = false;
       if (!_STACO.setup()) {
         if (_CONNECTFAIL == wcevo_connectfail_t::WCEVO_CF_RESET) ESP.restart();          
+        else if (_CONNECTFAIL == wcevo_connectfail_t::WCEVO_CF_CALLBACK) { if ( _cb_cfFail ) _cb_cfFail(); }          
         sta_reconnect_end();
       }
     }
@@ -873,7 +875,7 @@ void WCEVO_manager::sta_loop(){
       } 
 
       _STACO.get_lastReconnectAttempt(lastReconnectAttempt);
-      if (!_APCO.get_active() && !_scanNetwork_running && (millis() - lastReconnectAttempt > 45000) ){
+      if (!_APCO.get_active() && !_scanNetwork_running && (millis() - lastReconnectAttempt > 35000) ){
         if (_CONNECTFAIL == wcevo_connectfail_t::WCEVO_CF_NEXTAP) {
           if (_STACO.get_reconnectAttempt() > sta_getMaxAettemp()-1 ) {
             if (_scanNetwork_gotSSID) {
@@ -894,7 +896,13 @@ void WCEVO_manager::sta_loop(){
             ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "WCEVO_CF_RESET -> EST.restart\n");
             ESP.restart();
           } 
+        } else if (_CONNECTFAIL == wcevo_connectfail_t::WCEVO_CF_CALLBACK) {
+          if (_STACO.get_reconnectAttempt() > sta_getMaxAettemp()-1 ) {
+            ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "WCEVO_CF_CALLBACK -> WCEVO_CF_CALLBACK\n");
+            if ( _cb_cfFail ) _cb_cfFail();
+          } 
         }  
+
       }    
     }
   } else if (!_STACO.get_serverInitialized()){
@@ -939,7 +947,7 @@ void WCEVO_manager::sta_loop(){
      
     ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "STA register HTTP_GET request : /wcapi\n"); 
     _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
-      DynamicJsonDocument doc(3500);
+      DynamicJsonDocument doc(5000);
       int rSize = 0;
       for (unsigned int i = 0; i < request->args(); i++) {
         // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
@@ -1106,16 +1114,18 @@ boolean WCEVO_manager::configPortalHasTimeout(){
   // return (millis() > _configPortalStart + _configPortalTimeout);
 
 
-  if ( (_configPortalMod == 0) && (wifi_softap_get_station_num() > 0) ) {
-    _configPortalMod = 1;
-    _configPortalStart = millis();
-    Serial.println(F("Starting portal\n"));
-  }
-  if ((_configPortalMod == 1) && ( (millis()-_configPortalStart) > _configPortalTimeout)) {
-    _configPortalMod = 2;
-    Serial.println(F("Stopped portal\n"));
-    return true;
-  }
+  #ifdef ESP8266
+    if ( (_configPortalMod == 0) && (wifi_softap_get_station_num() > 0) ) {
+      _configPortalMod = 1;
+      _configPortalStart = millis();
+      Serial.println(F("Starting portal\n"));
+    }
+    if ((_configPortalMod == 1) && ( (millis()-_configPortalStart) > _configPortalTimeout)) {
+      _configPortalMod = 2;
+      Serial.println(F("Stopped portal\n"));
+      return true;
+    }  
+  #endif
   return false;
 }
 void WCEVO_manager::setConfigPortalTimeout(unsigned long seconds) {

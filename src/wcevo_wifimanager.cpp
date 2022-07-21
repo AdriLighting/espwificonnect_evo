@@ -1,19 +1,19 @@
 /**************************************************************
-	https://github.com/tzapu/WiFiManager
-	WiFiManager is a library for the ESP8266/Arduino platform
-	(https://github.com/esp8266/Arduino) to enable easy
-	configuration and reconfiguration of WiFi credentials using a Captive Portal
-	inspired by:
-	http://www.esp8266.com/viewtopic.php?f=29&t=2520
-	https://github.com/chriscook8/esp-arduino-apboot
-	https://github.com/esp8266/Arduino/tree/esp8266/hardware/esp8266com/esp8266/libraries/DNSServer/examples/CaptivePortalAdvanced
-	Built by AlexT https://github.com/tzapu
+  https://github.com/tzapu/WiFiManager
+  WiFiManager is a library for the ESP8266/Arduino platform
+  (https://github.com/esp8266/Arduino) to enable easy
+  configuration and reconfiguration of WiFi credentials using a Captive Portal
+  inspired by:
+  http://www.esp8266.com/viewtopic.php?f=29&t=2520
+  https://github.com/chriscook8/esp-arduino-apboot
+  https://github.com/esp8266/Arduino/tree/esp8266/hardware/esp8266com/esp8266/libraries/DNSServer/examples/CaptivePortalAdvanced
+  Built by AlexT https://github.com/tzapu
 
-	Ported to Async Web Server by https://github.com/alanswx
-	Licensed under MIT license
+  Ported to Async Web Server by https://github.com/alanswx
+  Licensed under MIT license
 
-	Ported for my personal library https://github.com/AdriLighting/espwificonnect_evo.git
-	Licensed under MIT license
+  Ported for my personal library https://github.com/AdriLighting/espwificonnect_evo.git
+  Licensed under MIT license
  **************************************************************/
 /**
  * WiFiManager.cpp
