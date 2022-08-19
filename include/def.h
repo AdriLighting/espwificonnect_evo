@@ -82,7 +82,7 @@
     
   // #include <esp_idf_version.h>
 
-
+/*
   // #include "esp_arduino_version.h"
   #ifdef ESP_ARDUINO_VERSION
       // #pragma message "ESP_ARDUINO_VERSION_MAJOR = " STRING(ESP_ARDUINO_VERSION_MAJOR)
@@ -96,7 +96,7 @@
       #define VER_ARDUINO_STR "Unknown"
       // #pragma message "ESP_ARDUINO_VERSION_REL  = " STRING(ARDUINO_ESP32_RELEASE) //"1_0_6"
   #endif
-
+*/
   #define F_EX(string_literal)  (String(FPSTR(string_literal)).c_str())
   
 #endif // DEF_H

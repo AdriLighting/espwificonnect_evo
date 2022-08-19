@@ -1101,8 +1101,13 @@ void WCEVO_manager::handleConnection(){
   }
   if (_APCO.get_active() ) {
     // configPortalHasTimeout();
-    _dnsServer->processNextRequest();   
-    // if (_configPortalMod == 1) _dnsServer->processNextRequest();   
+    if (_configPortalAuto == 0) {
+      _dnsServer->processNextRequest(); 
+    } else if (_configPortalAuto == 1) {
+      configPortalHasTimeout();
+      if (_configPortalMod == 1) _dnsServer->processNextRequest(); 
+    } 
+    //   
   }
   
 }
@@ -1115,12 +1120,13 @@ boolean WCEVO_manager::configPortalHasTimeout(){
 
 
   #ifdef ESP8266
-    if ( (_configPortalMod == 0) && (wifi_softap_get_station_num() > 0) ) {
+    if (_configPortalMod == 2) {
+      return false;
+    } else if ( (_configPortalMod == 0) && (wifi_softap_get_station_num() > 0) ) {
       _configPortalMod = 1;
       _configPortalStart = millis();
       Serial.println(F("Starting portal\n"));
-    }
-    if ((_configPortalMod == 1) && ( (millis()-_configPortalStart) > _configPortalTimeout)) {
+    } else if ( (_configPortalMod == 1) && ( (millis()-_configPortalStart) > _configPortalTimeout) ) {
       _configPortalMod = 2;
       Serial.println(F("Stopped portal\n"));
       return true;

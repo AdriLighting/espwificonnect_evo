@@ -168,6 +168,7 @@
     // uint16_t   _udp_port   = 9200;
 
     unsigned long _configPortalTimeout    = 0;
+    uint8_t _configPortalAuto = true;
     uint8_t _configPortalMod = 0;
     unsigned long _configPortalStart      = 0;
     boolean configPortalHasTimeout();
@@ -237,6 +238,7 @@
     void set_cb_webserveAprEvent(callback_function_t f) { _cb_webserveAprEvent = std::move(f); };
 
     void setConfigPortalTimeout(unsigned long seconds);
+    void setConfigPortalAuto(uint8_t v) { _configPortalAuto = v ; };
 
     void set_credentialUse(boolean);
     boolean get_credentialUse();
