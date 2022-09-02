@@ -30,7 +30,8 @@
       https://stackoverflow.com/questions/46289283/esp8266-captive-portal-with-pop-up
 
 */
-
+// ALWC_WS_OTA
+// ALWC_WS_API
 
 #include "wificonnectevo.h" 
 #include <altoolslib.h>
@@ -766,6 +767,9 @@ void WCEVO_manager::mdns_setup(){
   ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "mDNS started\n");
 }
 
+boolean WCEVO_manager::sta_connected(){
+  return _STACO.get_active();
+}
 boolean WCEVO_manager::isConnected(){
   return (WiFi.localIP()[0] != 0 && WiFi.status() == WL_CONNECTED);
 }
@@ -932,7 +936,9 @@ void WCEVO_manager::sta_loop(){
 
     if (!_APCO.get_active()) mdns_setup();
 
-    ota_setup(); 
+#ifdef ALWC_WS_OTA
+     ota_setup();  
+#endif 
 
     ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "Init STA interfaces\n");
     
@@ -945,70 +951,72 @@ void WCEVO_manager::sta_loop(){
        _cb_webserverOn();
      }
      
-    ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "STA register HTTP_GET request : /wcapi\n"); 
-    _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
-      DynamicJsonDocument doc(5000);
-      int rSize = 0;
-      for (unsigned int i = 0; i < request->args(); i++) {
-        // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
-        Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
-
-        if (request->argName(i) == "api") {
-          api_key(doc, request->arg(i) );
-        } 
-
-        if (request->argName(i) == "set_cm") {
-          // 
-          wcevo_connectmod_t mod = wcevo_connectmodArray_t[request->arg(i).toInt()];
-          set_cm(mod);
-          api_getter(doc, "server");
-          api_getter(doc, "connection");
-        } 
-
-        if (request->argName(i) == "set_cmFail") {
-          // 
-          wcevo_connectfail_t mod = wcevo_connectfaildArray_t[request->arg(i).toInt()];
-          set_cmFail(mod);
-          api_getter(doc, "server");
-          api_getter(doc, "connection"); 
-        } 
-
-        if (request->argName(i) == "to_fs") {
-          #ifdef FILESYSTEM
-            credentials_to_fs();
-            credentials_from_fs();
-            api_getter(doc, "server");
-            api_getter(doc, "connection");   
-          #endif          
-        } 
-
-        rSize = 0;
-        const char** split = al_tools::explode(request->arg(i), ',', rSize);
-        if (split) {
-          for(int j = 0; j < rSize; ++j) {
-            Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
-            if (request->argName(i) == "wc")      api_getter(doc, split[j]);                           
-            #ifdef ALSI_ENABLED
-            if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, split[j]);                           
-            if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, split[j]);   
-            #endif                          
-          }
-          for(int j = 0; j < rSize; ++j) {
-            delete split[j];
-          }
-          delete[] split; 
-        } else {
-          if (request->argName(i) == "wc")      api_getter(doc, request->arg(i).c_str());                           
-          #ifdef ALSI_ENABLED
-          if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
-          if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
-          #endif           
-        }       
-      }    
-      String result; 
-      serializeJson(doc,result); 
-      request->send(200, "application/json", result);
-    }).setFilter(ON_STA_FILTER);     
+#ifdef ALWC_WS_API
+         ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "STA register HTTP_GET request : /wcapi\n"); 
+         _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
+           DynamicJsonDocument doc(5000);
+           int rSize = 0;
+           for (unsigned int i = 0; i < request->args(); i++) {
+             // message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
+             Serial.printf_P(PSTR("argName: %s arg: %s\n"), request->argName(i).c_str(), request->arg(i).c_str());
+     
+             if (request->argName(i) == "api") {
+               api_key(doc, request->arg(i) );
+             } 
+     
+             if (request->argName(i) == "set_cm") {
+               // 
+               wcevo_connectmod_t mod = wcevo_connectmodArray_t[request->arg(i).toInt()];
+               set_cm(mod);
+               api_getter(doc, "server");
+               api_getter(doc, "connection");
+             } 
+     
+             if (request->argName(i) == "set_cmFail") {
+               // 
+               wcevo_connectfail_t mod = wcevo_connectfaildArray_t[request->arg(i).toInt()];
+               set_cmFail(mod);
+               api_getter(doc, "server");
+               api_getter(doc, "connection"); 
+             } 
+     
+             if (request->argName(i) == "to_fs") {
+               #ifdef FILESYSTEM
+                 credentials_to_fs();
+                 credentials_from_fs();
+                 api_getter(doc, "server");
+                 api_getter(doc, "connection");   
+               #endif          
+             } 
+     
+             rSize = 0;
+             const char** split = al_tools::explode(request->arg(i), ',', rSize);
+             if (split) {
+               for(int j = 0; j < rSize; ++j) {
+                 Serial.printf_P(PSTR("[%d] %s\n"), j , split[j]);
+                 if (request->argName(i) == "wc")      api_getter(doc, split[j]);                           
+                 #ifdef ALSI_ENABLED
+                 if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, split[j]);                           
+                 if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, split[j]);   
+                 #endif                          
+               }
+               for(int j = 0; j < rSize; ++j) {
+                 delete split[j];
+               }
+               delete[] split; 
+             } else {
+               if (request->argName(i) == "wc")      api_getter(doc, request->arg(i).c_str());                           
+               #ifdef ALSI_ENABLED
+               if (request->argName(i) == "alsi")    ALSYSINFO_getterByCat(doc, request->arg(i).c_str());                           
+               if (request->argName(i) == "alsii")   ALSYSINFO_getterByKey(doc, request->arg(i).c_str());   
+               #endif           
+             }       
+           }    
+           String result; 
+           serializeJson(doc,result); 
+           request->send(200, "application/json", result);
+         }).setFilter(ON_STA_FILTER);  
+#endif     
 
     ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "webserverBegin\n");
     _webserver->begin();
@@ -1128,6 +1136,7 @@ boolean WCEVO_manager::configPortalHasTimeout(){
       Serial.println(F("Starting portal\n"));
     } else if ( (_configPortalMod == 1) && ( (millis()-_configPortalStart) > _configPortalTimeout) ) {
       _configPortalMod = 2;
+      _configPortalAuto =2;
       Serial.println(F("Stopped portal\n"));
       return true;
     }  
@@ -1137,6 +1146,7 @@ boolean WCEVO_manager::configPortalHasTimeout(){
 void WCEVO_manager::setConfigPortalTimeout(unsigned long seconds) {
   _configPortalTimeout = seconds * 1000;
   _configPortalMod = 0;
+  _configPortalAuto = 1;
 }
 
 void WCEVO_manager::ota_setup(){

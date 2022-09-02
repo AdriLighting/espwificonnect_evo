@@ -77,6 +77,7 @@ void WCEVO_APconnect::setup_webserver(boolean webserverBegin) {
   _webserver->on(F_EX(R_restart),       std::bind(&WCEVO_APconnect::handleReset,                this, std::placeholders::_1)).setFilter(ON_AP_FILTER);  
   #endif
 
+#ifdef ALWC_WS_API
   ALT_TRACEC(WCEVO_DEBUGREGION_WCEVO, "AP register HTTP_GET request : /wcapi\n"); 
   _webserver->on("/wcapi", HTTP_GET, [this](AsyncWebServerRequest *request){
     DynamicJsonDocument doc(3500);
@@ -112,7 +113,8 @@ void WCEVO_APconnect::setup_webserver(boolean webserverBegin) {
     String result; 
     serializeJson(doc,result); 
     request->send(200, "application/json", result);
-  }).setFilter(ON_AP_FILTER);  
+  }).setFilter(ON_AP_FILTER);    
+#endif
 
   // typedef std::function<void()> getCb_t;
   // getCb_t getCb = WCEVO_managerPtrGet()->get_cb_webserveAprOn();
@@ -832,14 +834,14 @@ void WCEVO_APconnect::handleWifiMod(AsyncWebServerRequest *request) {
   page += F("Type d'identifiant");
   page += F("<p/>");  
   radio = FPSTR(HTTP_RADIO);
-  radio.replace(F("{i}"), F("cred"));
+  radio.replace(F("{i}"), F("cred_simple"));
   radio.replace(F("{n}"), F("cred"));
   radio.replace(F("{v}"), F("1"));
   radio.replace(F("{1}"), F(" Credential"));
   radio.replace(F("{c}"), (WCEVO_managerPtrGet()->get_credentialUse())?"checked":"");
   page += radio;
   radio = FPSTR(HTTP_RADIO);
-  radio.replace(F("{i}"), F("creds"));
+  radio.replace(F("{i}"), F("cred_multiple"));
   radio.replace(F("{n}"), F("cred"));
   radio.replace(F("{v}"), F("0"));
   radio.replace(F("{1}"), F(" Credential multiple"));

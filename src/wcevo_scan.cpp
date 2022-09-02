@@ -40,6 +40,7 @@ namespace wcevo_scan {
 
 
 WCEVO_wifiscanItem::WCEVO_wifiscanItem(uint8_t index){
+  _index              = index;
   _ssid               = WiFi.SSID(index);
   _encryptionType     = WiFi.encryptionType(index);
   _encryptionTypeStr  = wcevo_scan::encryptionTypeStr(_encryptionType);

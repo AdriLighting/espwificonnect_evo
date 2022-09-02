@@ -168,8 +168,8 @@
     // uint16_t   _udp_port   = 9200;
 
     unsigned long _configPortalTimeout    = 0;
-    uint8_t _configPortalAuto = true;
-    uint8_t _configPortalMod = 0;
+    uint8_t _configPortalAuto             = 1;
+    uint8_t _configPortalMod              = 0;
     unsigned long _configPortalStart      = 0;
     boolean configPortalHasTimeout();
 
@@ -239,6 +239,8 @@
 
     void setConfigPortalTimeout(unsigned long seconds);
     void setConfigPortalAuto(uint8_t v) { _configPortalAuto = v ; };
+
+    boolean sta_connected();    
 
     void set_credentialUse(boolean);
     boolean get_credentialUse();

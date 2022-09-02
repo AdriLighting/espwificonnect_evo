@@ -5,6 +5,7 @@
   
   class WCEVO_wifiscanItem
   {
+    uint8_t   _index    ;
     String    _ssid     ;
     int32_t   _rssi     ;
     String    _bssidstr ;
@@ -70,6 +71,8 @@
     String networkListAsString(boolean);
     void networkListAsJson(uint8_t,JsonArray &);
     void list_clear();
+
+    LList<WCEVO_wifiscanItem*> & get_scan() { return _wifiScan; }
     
   };
 
