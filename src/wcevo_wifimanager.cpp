@@ -56,8 +56,8 @@
 
 
 
-#include "wcevo_wifimanager.h"
-#include "wificonnectevo.h"
+#include "../include/wcevo_wifimanager.h"
+#include "../include/wificonnectevo.h"
 
 
 

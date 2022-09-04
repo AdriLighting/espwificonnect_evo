@@ -40,8 +40,8 @@
         Licensed under MIT license
  **************************************************************/
 
-#include "apconnect.h"
-#include "wificonnectevo.h"
+#include "../include/apconnect.h"
+#include "../include/wificonnectevo.h"
 
 
 #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)

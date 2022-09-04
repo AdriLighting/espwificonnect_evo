@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#include "wcevo_scan.h"
-#include "wificonnectevo.h"
+#include "../include/wcevo_scan.h"
+#include "../include/wificonnectevo.h"
 
 #ifdef DEBUG_ESP_WIFI
 #ifdef DEBUG_ESP_PORT

@@ -40,8 +40,8 @@
         Licensed under MIT license
  **************************************************************/
 
-#include "staconnect.h"
-#include "wificonnectevo.h"
+#include "../include/staconnect.h"
+#include "../include/wificonnectevo.h"
 
 void WCEVO_STAconnect::init(WCEVO_server * server){
   _server = server; 

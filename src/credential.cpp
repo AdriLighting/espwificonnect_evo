@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include "credential.h"
+#include "../include/credential.h"
 
 size_t bufferInit(char * & buffer, const char * const & str){
   if (!buffer) {

@@ -56,7 +56,7 @@
 // ALWC_WS_OTA
 // ALWC_WS_API
 
-#include "wificonnectevo.h" 
+#include "../include/wificonnectevo.h" 
 #include <altoolslib.h>
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
