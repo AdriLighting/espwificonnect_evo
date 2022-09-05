@@ -23,7 +23,7 @@
  */
 
 #include "../include/wcevo_scan.h"
-#include "../include/wificonnectevo.h"
+#include "../include/al_wificonnectevo.h"
 
 #ifdef DEBUG_ESP_WIFI
 #ifdef DEBUG_ESP_PORT

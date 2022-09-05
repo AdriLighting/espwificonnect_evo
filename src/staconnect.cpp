@@ -41,7 +41,7 @@
  **************************************************************/
 
 #include "../include/staconnect.h"
-#include "../include/wificonnectevo.h"
+#include "../include/al_wificonnectevo.h"
 
 void WCEVO_STAconnect::init(WCEVO_server * server){
   _server = server; 

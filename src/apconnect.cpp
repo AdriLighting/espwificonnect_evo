@@ -41,7 +41,7 @@
  **************************************************************/
 
 #include "../include/apconnect.h"
-#include "../include/wificonnectevo.h"
+#include "../include/al_wificonnectevo.h"
 
 
 #if (WCEVO_PORTAL == WCEVO_PORTAL_UI)

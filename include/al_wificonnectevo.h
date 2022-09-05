@@ -53,8 +53,8 @@
       https://stackoverflow.com/questions/46289283/esp8266-captive-portal-with-pop-up
 */
 
-#ifndef _WIFICONNECTEVO_H
-#define _WIFICONNECTEVO_H
+#ifndef _AL_WIFICONNECTEVO_H_
+#define _AL_WIFICONNECTEVO_H_
 
   #include "def.h"
 
