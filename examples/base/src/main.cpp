@@ -2,11 +2,9 @@
 #include <wificonnectevo.h>
 
 
-
 AsyncWebServer  webserver(80);
 DNSServer       dnsServer;
 WCEVO_manager   _WCEVO_manager("ex_wcevo", "wcevo1234", &dnsServer, &webserver);  
-
 
 
 void setup() {
@@ -14,7 +12,7 @@ void setup() {
   Serial.begin(115200);
 
   for(unsigned long const serialBeginTime = millis(); !Serial && (millis() - serialBeginTime > 5000); ) { }
-  delay(1000);
+  delay(3000);
 
   Serial.println();
   Serial.printf_P(PSTR("\n#############\nEX WCEVO\n#############\n\n"));
@@ -28,8 +26,7 @@ void setup() {
   #endif 
 
 
-
-  WCEVO_managerPtrGet()->set_credential("free-3C3786-EXT", "SSIDPASS");
+  WCEVO_managerPtrGet()->set_credential("free-3C3786-EXT", "phcaadax");
   _WCEVO_manager.set_cm(WCEVO_CM_STAAP);
   _WCEVO_manager.set_cmFail(WCEVO_CF_RESET);
   _WCEVO_manager.start();
@@ -39,6 +36,7 @@ void setup() {
 
 void loop() {
   _WCEVO_manager.handleConnection();
+  _Sr_menu.serialRead();
 }
 
 

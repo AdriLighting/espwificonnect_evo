@@ -82,13 +82,13 @@ WCEVO_credential * _temp_WCEVO_credential = nullptr;
 WCEVO_manager * WCEVO_managerPtr = nullptr;
 WCEVO_manager * WCEVO_managerPtrGet(){return WCEVO_managerPtr;}
 void WCEVO_manager::init(const char * const & Host, const char * const & APpass, const char * const & OTApass){
-  // #ifdef DEBUG_KEYBOARD
-  //   _Sr_menu.add((const char *)"wifi_api",    (const char *)"r", [this]() { keyboard_print(); });
-  //   _Sr_menu.add((const char *)"wifi_getter", (const char *)"@", [this](const String & v1, const String & v2) {  
-  //     Serial.printf_P(PSTR("CMD: %s - VAL: %s\n"), v1.c_str(), v2.c_str());
-  //     keyboard_getter(v1);    
-  //   }, SR_MM::SRMM_KEYVAL);  
-  // #endif 
+  #ifdef DEBUG_KEYBOARD
+    _Sr_menu.add((const char *)"wifi_api",    (const char *)"r", [&]() { keyboard_print(); });
+    _Sr_menu.add((const char *)"wifi_getter", (const char *)"_", [&](const String & v1, const String & v2) {  
+      Serial.printf_P(PSTR("CMD: %s - VAL: %s\n"), v1.c_str(), v2.c_str());
+      keyboard_getter(v1);    
+    }, SR_MM::SRMM_KEYVAL);  
+  #endif 
   _temp_WCEVO_credential = new WCEVO_credential((const char *)"", (const char *)"");
   _server = new WCEVO_server(Host,APpass,OTApass);  
   _APCO.init(_server, _dnsServer, _webserver);
