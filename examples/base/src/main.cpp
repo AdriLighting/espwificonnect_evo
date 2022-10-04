@@ -26,7 +26,7 @@ void setup() {
   #endif 
 
 
-  WCEVO_managerPtrGet()->set_credential("free-3C3786-EXT", "phcaadax");
+  WCEVO_managerPtrGet()->set_credential("free-3C3786-EXT", "SSIDPASS");
   _WCEVO_manager.set_cm(WCEVO_CM_STAAP);
   _WCEVO_manager.set_cmFail(WCEVO_CF_RESET);
   _WCEVO_manager.start();

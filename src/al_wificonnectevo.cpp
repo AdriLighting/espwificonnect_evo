@@ -449,17 +449,21 @@ void WCEVO_manager::keyboard_getter(const String & v1) {
 void WCEVO_manager::api_key(DynamicJsonDocument & doc, const String & arg) {
   bool pr_wc    = false;
   bool pr_wcF   = false;
+  #ifdef ALSI_ENABLED
   bool pr_alsi  = false;
-  bool pr_alsiF = false;
+  bool pr_alsiF = false;  
+  #endif
 
   int rSize = 0;
   const char** split = al_tools::explode(arg, ',', rSize);
   if (split) {
     for(int j = 0; j < rSize; ++j) {
       if (al_tools::ch_toString(split[j]) == "wc")     pr_wc     = true;               
-      if (al_tools::ch_toString(split[j]) == "wci")    pr_wcF    = true;               
+      if (al_tools::ch_toString(split[j]) == "wci")    pr_wcF    = true; 
+      #ifdef ALSI_ENABLED
       if (al_tools::ch_toString(split[j]) == "alsi")   pr_alsi   = true;               
-      if (al_tools::ch_toString(split[j]) == "alsii")  pr_alsiF  = true;               
+      if (al_tools::ch_toString(split[j]) == "alsii")  pr_alsiF  = true;  
+      #endif
     }
     for(int j = 0; j < rSize; ++j) {
       delete split[j];
@@ -469,18 +473,24 @@ void WCEVO_manager::api_key(DynamicJsonDocument & doc, const String & arg) {
     if (arg == "f") {
       pr_wc     = true;               
       pr_wcF    = true;               
-      pr_alsi   = true;               
-      pr_alsiF  = true;           
+      #ifdef ALSI_ENABLED
+      pr_alsi   = true;
+      pr_alsiF  = true;    
+      #endif               
     }
     else if (arg == "c") {
-      pr_wc     = true;               
-      pr_alsi   = true;               
+      pr_wc     = true;   
+      #ifdef ALSI_ENABLED            
+      pr_alsi   = true;   
+      #endif            
     }
     else {
       if (arg == "wc")     pr_wc     = true;               
-      if (arg == "wci")    pr_wcF    = true;               
+      if (arg == "wci")    pr_wcF    = true;  
+      #ifdef ALSI_ENABLED             
       if (arg == "alsi")   pr_alsi   = true;               
-      if (arg == "alsii")  pr_alsiF  = true;                
+      if (arg == "alsii")  pr_alsiF  = true;
+      #endif
     }
 
   }
